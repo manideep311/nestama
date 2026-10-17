@@ -1,0 +1,25 @@
+# Local PostgreSQL for development: `docker compose up -d db`.
+# Matching server/.env lines:
+#   DATABASE_URL="postgresql://nestama:nestama@localhost:5440/nestama"
+#   DIRECT_URL="postgresql://nestama:nestama@localhost:5440/nestama"
+# The credentials only work on this machine (the port is bound to 127.0.0.1).
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nestama
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nestama}
+      POSTGRES_DB: nestama
+    ports:
+      - "127.0.0.1:${DB_PORT:-5440}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nestama -d nestama"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:

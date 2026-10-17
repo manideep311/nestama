@@ -1,0 +1,48 @@
+# Render Blueprint for the NESTAMA API (the storefront deploys to Vercel, the database is Supabase).
+# Render → New → Blueprint → pick this repository. Values marked `sync: false` are asked for on
+# the first deploy; see the README's deploy guide for what each one should be.
+services:
+  - type: web
+    name: nestama-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter server build
+    # Pending migrations run before each start (paid plans can move this to preDeployCommand).
+    # Plain node binaries here, so the runtime doesn't depend on the build's pnpm shims.
+    startCommand: cd server && node_modules/.bin/prisma migrate deploy && node dist/server.js
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      # Supabase → Connect → Session pooler (Render's network is IPv4; the direct host is IPv6-only).
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      # The Vercel storefront URL, e.g. https://nestama.vercel.app (auth runs through its /api rewrite).
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      # Vercel's rewrite plus Render's load balancer.
+      - key: TRUST_PROXY
+        value: "2"
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: DEMO_GATEWAY_SECRET
+        generateValue: true
+      # Must equal REVALIDATE_SECRET in the Vercel project.
+      - key: REVALIDATE_SECRET
+        sync: false
+      # Optional: admin image uploads (otherwise they land on Render's disk, wiped on redeploy).
+      - key: CLOUDINARY_URL
+        sync: false
+      # Optional: real password-reset emails through Resend (otherwise they're only logged).
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "NESTAMA <hello@nestama.test>"
