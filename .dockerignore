@@ -1,0 +1,19 @@
+# The image is built from the repository root (docker build -f server/Dockerfile .).
+# Keep the context small, and never send env files or local uploads to the builder.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/.turbo
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+server/uploads
+server/src/generated
+.git
+.github
+docs
+# The storefront deploys separately; only its manifest is needed for the workspace lockfile.
+client/*
+!client/package.json
