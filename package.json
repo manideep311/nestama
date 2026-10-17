@@ -1,0 +1,20 @@
+{
+  "name": "nestama",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,magenta \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "~6.0.3"
+  }
+}

@@ -1,0 +1,8 @@
+# LF everywhere, matching Prettier and the Linux CI, whatever the contributor's platform.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.mp4 binary
