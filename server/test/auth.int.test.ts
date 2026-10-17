@@ -60,7 +60,10 @@ describe.skipIf(!hasDb)("auth API", () => {
 
   it("only sends password-reset links back to the store", async () => {
     const reset = (redirectTo: string) =>
-      request(app).post("/api/auth/request-password-reset").set("Origin", ORIGIN).send({ email: testEmail("redirect"), redirectTo });
+      request(app)
+        .post("/api/auth/request-password-reset")
+        .set("Origin", ORIGIN)
+        .send({ email: testEmail("redirect"), redirectTo });
     for (const foreign of ["https://evil.example/steal", "//evil.example/steal"]) {
       expect((await reset(foreign)).status).toBe(403);
     }
