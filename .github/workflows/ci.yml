@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: nestama
+          POSTGRES_PASSWORD: nestama
+          POSTGRES_DB: nestama
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nestama -d nestama"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Throwaway values for the CI database and test run only.
+    env:
+      DATABASE_URL: postgresql://nestama:nestama@localhost:5432/nestama
+      DIRECT_URL: postgresql://nestama:nestama@localhost:5432/nestama
+      BETTER_AUTH_SECRET: ci-only-better-auth-secret-not-for-production
+      DEMO_GATEWAY_SECRET: ci-only-demo-gateway-secret-not-for-production
+      API_URL: http://localhost:4000
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm --filter client lint
+
+      - name: Migrate and seed the database
+        run: |
+          pnpm --filter server db:deploy
+          pnpm --filter server db:seed
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build the API
+        run: pnpm --filter server build
+
+      # The storefront prerenders catalog pages, so the built API serves it during the build.
+      - name: Build the storefront
+        run: |
+          node server/dist/server.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4000/api/v1/health && break; sleep 1; done
+          pnpm --filter client build
+
+      - name: API log
+        if: failure()
+        run: cat api.log || true
