@@ -89,6 +89,26 @@ Contrast rules: text on `orange` fills is charcoal (≈4.9:1) or white only at �
 
 **Motion tokens:** `fast 150ms`, `base 220ms`, `slow 400ms`; easing `cubic-bezier(.2,.8,.2,1)`; springs for bounces (`stiffness 500, damping 22`). One `useReducedMotion` gate (Motion's hook + CSS `@media (prefers-reduced-motion)`) used by every animation.
 
+### 4.1 Visual reference (user-supplied mockup, 2026-10-10)
+
+The user supplied a mockup to be used **as a reference** (not a pixel copy) for product presentation, page sections and the loading/animation moments. Takeaways adopted:
+
+- **Announcement bar:** forest background with icon-led items: free shipping ≥ ₹999 · `NESTAMA20` for 20% off · limited-time offer · delivery pincode selector ("Deliver to 500081").
+- **Header:** paw logo mark + "NESTAMA / YOUR TRUE FRIEND"; wide rounded search field ("Search for pet food, toys, accessories…"); Account, Wishlist, Cart with an orange count badge; category nav row with **Offers** underlined in orange.
+- **Hero:** three zones on desktop: copy (left: "Happy Pets." charcoal / "Happier Lives." orange, doodled heart, paw), pet photo (centre, soft-faded into the background, handwritten aside), and a white **offer card** (right: "SPECIAL OFFER" pill, "UP TO 25% OFF", four **forest countdown tiles** Days/Hours/Minutes/Seconds, coupon row with copy button, orange "Shop Now →"). Trust row under the CTAs: Free Shipping above ₹999 · Quality Products · Loved by Pet Parents.
+- **Categories:** one row of circular thumbnails on pastel (peach/sage) discs, label below.
+- **Campaign cards:** four tinted cards (sage, pink-peach, peach, sage-blue), forest headline, "Flat 15% OFF" with the number in orange, forest pill CTA ("Shop Toys →"), pet photo on the right, handwritten accent ("Play more, bark less", "z z z").
+- **Deals of the Day:** flame icon, subtitle, "View all deals →", "Offer ends in hh:mm:ss" pill. **Product card:** white card, orange `NN% OFF` badge top-left, product image, name, stars + review count, bold price + struck-through reference price, orange square **cart icon button** bottom-right.
+- **Trust strip:** six outlined icons with two-line labels on a cream band.
+- **Footer:** forest, logo, "Join our pet-loving community" newsletter with orange Subscribe, pet photo on the right.
+- **Loader:** cream card, logo, kitten batting an orange wool ball whose strand runs across the card, copy line, paw-marked progress bar with a percentage.
+- **Product click:** dog beside the product with a speech bubble "Good choice! Your furry friend will love this."
+- **Add to cart:** toast "Added to your pack!"; product thumbnail flies to the cart with a dotted paw trail; cart badge bumps.
+- **PDP:** name, rating, price + strike + `20% OFF` chip, short description, colour swatches, size chips, quantity stepper, orange Add to Cart + heart button, feature icon row (e.g. Breathable · Adjustable · Durable · Reflective), tabs Description / Specifications / Reviews.
+- **Order success:** puppy + confetti, "Woohoo! Your order is on its way!", forest "Track your order →" and outlined "Continue shopping".
+
+**Accessibility adjustment:** white text on `#FF571F` is 3.17:1 (fails AA). Filled orange buttons and badges with white text use **`ember` `#D43F0A`** (4.65:1); `#FF571F` stays for hearts, paws, the yarn thread, count dots and gradients.
+
 ---
 
 ## 5. Data model (Prisma)
