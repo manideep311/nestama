@@ -143,7 +143,7 @@ function Fulfilment({ order }: { order: AdminOrderDetailDTO }) {
         <div className="rounded-xl bg-cream p-3 text-xs text-muted">
           <p className="mb-2">
             {isPaid(order.status)
-              ? "Cancelling puts the stock back, frees the coupon and records a refund (demo: no money moves)."
+              ? "Cancelling puts the stock back, frees the coupon and records a refund."
               : "Cancelling releases the reserved stock. The customer can't pay for it afterwards."}
           </p>
           <ConfirmButton
@@ -292,7 +292,6 @@ export function OrderDetail({ id }: { id: string }) {
             ) : (
               <p className="text-sm text-muted">No payment started.</p>
             )}
-            <p className="mt-2 text-xs text-muted">NestaPay demo: no real money moves.</p>
           </Panel>
         </aside>
       </div>

@@ -286,7 +286,7 @@ export function CheckoutView() {
             </Button>
             {!addressId && <p className="mt-2 text-center text-sm text-muted">Add a delivery address to continue.</p>}
             <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
-              <ShieldCheck className="size-4 text-forest" aria-hidden="true" /> NestaPay demo — UPI, cards and netbanking. No real charges.
+              <ShieldCheck className="size-4 text-forest" aria-hidden="true" /> Demo payment gateway
             </p>
           </div>
         </aside>

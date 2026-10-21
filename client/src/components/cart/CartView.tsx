@@ -238,7 +238,7 @@ function OrderSummary({ cart }: { cart: CartDTO }) {
       >
         Checkout securely <ArrowRight className="size-5" aria-hidden="true" />
       </ButtonLink>
-      <p className="mt-3 text-center text-xs text-muted">UPI · Cards · Net Banking — demo payment, no real charges</p>
+      <p className="mt-3 text-center text-xs text-muted">UPI · Cards · Net Banking</p>
     </aside>
   );
 }

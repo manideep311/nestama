@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import type { PromotionDTO, StoreSettingsPublicDTO } from "@nestama/shared";
 import { getActivePromotions, getStoreSettings } from "@/lib/catalog";
 import { AnnouncementBar } from "./AnnouncementBar";
-import { DemoRibbon } from "./DemoRibbon";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { InitialLoadingScreen } from "@/components/loader/InitialLoadingScreen";
@@ -31,7 +30,7 @@ async function loadChrome(): Promise<{ settings: StoreSettingsPublicDTO; offer: 
   }
 }
 
-/** The storefront's frame: intro film, demo ribbon, announcement bar, header and footer. */
+/** The storefront's frame: intro film, announcement bar, header and footer. */
 export async function StoreFrame({ children }: { children: ReactNode }) {
   const { settings, offer } = await loadChrome();
   return (
@@ -42,7 +41,6 @@ export async function StoreFrame({ children }: { children: ReactNode }) {
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <DemoRibbon />
         <AnnouncementBar settings={settings} offer={offer} />
         <Header popularSearches={settings.popularSearches} />
         <main id="main" className="flex-1">

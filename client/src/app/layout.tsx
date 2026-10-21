@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Caveat, Manrope } from "next/font/google";
-import { ribbonPreference } from "@/components/layout/DemoRibbon";
 import { InlineScript } from "@/components/ui/InlineScript";
 import { introPreference } from "@/components/loader/InitialLoadingScreen";
 import { SITE_URL } from "@/lib/site";
@@ -53,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN" className={`${bricolage.variable} ${manrope.variable} ${caveat.variable}`} suppressHydrationWarning>
       <head>
-        <InlineScript html={ribbonPreference} />
         <InlineScript html={introPreference} />
       </head>
       <body className="flex min-h-dvh flex-col">

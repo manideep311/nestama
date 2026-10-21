@@ -680,7 +680,7 @@ function ProductForm({ product }: { product?: AdminProductDTO }) {
             <div className="space-y-3">
               <Toggle checked={d.isActive} onChange={(v) => set("isActive", v)} label="Show in the store" />
               <Toggle checked={d.isFeatured} onChange={(v) => set("isFeatured", v)} label="Featured on the homepage" />
-              <Toggle checked={d.isSample} onChange={(v) => set("isSample", v)} label="Sample product (demo)" />
+              <Toggle checked={d.isSample} onChange={(v) => set("isSample", v)} label="Sample product" />
             </div>
           </Panel>
           <Panel title="Tags">

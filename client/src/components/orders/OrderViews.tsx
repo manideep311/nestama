@@ -364,7 +364,7 @@ export function OrderTracking({ id }: { id: string }) {
             {o.payment && (
               <p className="mt-4 rounded-2xl bg-cream px-4 py-3 text-sm text-charcoal/85">
                 {o.payment.status === "CAPTURED"
-                  ? `Paid by ${o.payment.method ? METHOD_LABEL[o.payment.method] : "NestaPay"}${o.paidAt ? ` on ${formatDate(o.paidAt)}` : ""} · NestaPay demo`
+                  ? `Paid by ${o.payment.method ? METHOD_LABEL[o.payment.method] : "NestaPay"}${o.paidAt ? ` on ${formatDate(o.paidAt)}` : ""}`
                   : o.payment.status === "FAILED"
                     ? "Payment not completed — nothing was charged."
                     : "Awaiting payment."}

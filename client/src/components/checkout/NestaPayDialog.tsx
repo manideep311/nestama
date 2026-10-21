@@ -117,7 +117,6 @@ export function NestaPayDialog({
             <div role="status" className="flex flex-col items-center gap-3 py-14 text-center">
               <Loader2 className="size-10 animate-spin text-forest" aria-hidden="true" />
               <p className="font-bold text-forest">Confirming with your bank…</p>
-              <p className="text-sm text-muted">Demo payment — no money is moving.</p>
             </div>
           ) : stage.kind === "failed" ? (
             <div role="alert" className="py-8 text-center">
@@ -197,10 +196,6 @@ function PaymentForm({ amount, onSubmit }: { amount: number; onSubmit: (method: 
 
   return (
     <form onSubmit={handleSubmit} noValidate className="pt-5">
-      <p className="mb-4 rounded-2xl bg-sage/70 px-4 py-3 text-sm text-forest">
-        This is a demo gateway. No money moves, and nothing you type here is sent anywhere.
-      </p>
-
       <div role="tablist" aria-label="Payment method" className="grid grid-cols-3 gap-2">
         {METHODS.map(({ id, label, icon: Icon }, i) => {
           const selected = method === id;
@@ -257,7 +252,7 @@ function PaymentForm({ amount, onSubmit }: { amount: number; onSubmit: (method: 
               autoComplete="off"
               placeholder="1234 5678 9012 3456"
               error={errors.number}
-              hint={<TestValue>Test card: 4111 1111 1111 1111 — never use a real card here.</TestValue>}
+              hint={<TestValue>Test card: 4111 1111 1111 1111</TestValue>}
             />
             <div className="grid grid-cols-2 gap-4">
               <TextField
@@ -296,13 +291,7 @@ function PaymentForm({ amount, onSubmit }: { amount: number; onSubmit: (method: 
         )}
 
         {method === "NETBANKING" && (
-          <SelectField
-            label="Your bank"
-            value={bank}
-            onChange={(e) => setBank(e.target.value)}
-            error={errors.bank}
-            hint="Demo banks — no real bank is contacted."
-          >
+          <SelectField label="Your bank" value={bank} onChange={(e) => setBank(e.target.value)} error={errors.bank}>
             <option value="" disabled>
               Choose a bank
             </option>

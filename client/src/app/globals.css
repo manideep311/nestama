@@ -182,11 +182,6 @@
 
 /* ─────────────────────────── Components ─────────────────────────── */
 
-/* Dismissed demo ribbon (set before paint by an inline script) */
-[data-ribbon="hidden"] .demo-ribbon {
-  display: none;
-}
-
 /* Yarn thread drawing itself in (signature accent) */
 /* Resting state is fully drawn, so reduced motion (animation: none) still shows the thread. */
 .yarn-draw {

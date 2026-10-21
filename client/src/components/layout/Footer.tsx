@@ -96,7 +96,7 @@ export function Footer({ settings }: { settings: StoreSettingsPublicDTO }) {
               </li>
             ))}
           </ul>
-          <p>© 2026 NESTAMA. A portfolio demo store — products are samples and no real payments are taken.</p>
+          <p>© 2026 NESTAMA. All rights reserved.</p>
         </div>
       </div>
     </footer>
