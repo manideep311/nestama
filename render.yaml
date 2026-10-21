@@ -13,6 +13,16 @@ services:
     startCommand: cd server && node_modules/.bin/prisma migrate deploy && node dist/server.js
     healthCheckPath: /api/v1/health
     autoDeploy: true
+    # Redeploy only when something the API is built from changes (not for storefront-only pushes).
+    buildFilter:
+      paths:
+        - server/**
+        - shared/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - tsconfig.base.json
+        - render.yaml
     envVars:
       - key: NODE_VERSION
         value: "24"
