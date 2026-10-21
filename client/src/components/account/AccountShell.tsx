@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LayoutGrid, LogOut, MapPin, Package, PawPrint, UserRound } from "lucide-react";
-import { authClient, useSession } from "@/lib/auth-client";
+import { Heart, LayoutGrid, LogOut, MapPin, Package, PawPrint, ShieldCheck, UserRound } from "lucide-react";
+import { signOutAndLeave, useSession } from "@/lib/auth-client";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
@@ -16,6 +16,9 @@ const NAV = [
   { href: "/account/wishlist", label: "Wishlist", icon: Heart },
   { href: "/account/profile", label: "Profile", icon: UserRound },
 ];
+
+/** Admins reach the dashboard from their account too (sign-in already lands them there). */
+const ADMIN_LINK = { href: "/admin", label: "Admin dashboard", icon: ShieldCheck };
 
 function isActive(pathname: string, href: string) {
   return href === "/account" ? pathname === "/account" : pathname.startsWith(href);
@@ -30,13 +33,14 @@ export function AccountShell({ children }: { children: ReactNode }) {
   const { data, isPending } = useSession();
 
   if (!isPending && !data) return <div className="container-page py-8 md:py-12">{children}</div>;
+  const links = data?.user.role === "ADMIN" ? [...NAV, ADMIN_LINK] : NAV;
 
   return (
     <div className="container-page grid gap-6 py-8 md:py-12 lg:grid-cols-[15rem_1fr] lg:gap-10">
       <nav aria-label="Your account" className="min-w-0 lg:sticky lg:top-40 lg:self-start">
         <p className="mb-3 hidden text-xs font-bold tracking-[0.18em] text-muted uppercase lg:block">Your account</p>
         <ul className="-mx-4 scrollbar-none flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-0">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {links.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (
               <li key={href} className="shrink-0">
@@ -57,7 +61,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
         </ul>
         <button
           type="button"
-          onClick={() => void authClient.signOut()}
+          onClick={() => void signOutAndLeave()}
           className={buttonClasses({ variant: "ghost", size: "sm", className: "mt-4 hidden text-muted lg:inline-flex" })}
         >
           <LogOut className="size-4" aria-hidden="true" /> Sign out

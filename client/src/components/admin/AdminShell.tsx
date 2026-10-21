@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Boxes,
@@ -23,7 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { authClient, useSession } from "@/lib/auth-client";
+import { signOutAndLeave, useSession } from "@/lib/auth-client";
 import { Logo } from "@/components/ui/Logo";
 import { AdminAccess } from "@/lib/admin-client";
 import { cn } from "@/lib/cn";
@@ -143,7 +143,6 @@ function SidebarFooter({ name, onSignOut }: { name?: string; onSignOut: () => vo
  * frame and page render as skeletons (their reads wait on `AdminAccess`); non-admins see "No access".
  */
 export function AdminShell({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const { data, isPending, error, refetch } = useSession();
   const [drawer, setDrawer] = useState(false);
   const drawerRef = useRef<HTMLDialogElement>(null);
@@ -155,10 +154,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     if (!drawer && d.open) d.close();
   }, [drawer]);
 
-  const signOut = async () => {
-    await authClient.signOut();
-    router.replace("/");
-  };
+  const signOut = () => void signOutAndLeave();
 
   const isAdmin = data?.user.role === "ADMIN";
 

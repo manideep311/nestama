@@ -10,7 +10,7 @@ import type { NavItem } from "@/lib/nav";
 import { Logo } from "@/components/ui/Logo";
 import { PawIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
-import { authClient, useSession } from "@/lib/auth-client";
+import { signOutAndLeave, useSession } from "@/lib/auth-client";
 import { buttonClasses } from "@/components/ui/Button";
 
 const noopSubscribe = () => () => {};
@@ -193,7 +193,7 @@ function MenuAccountRow({ onNavigate }: { onNavigate: () => void }) {
         type="button"
         onClick={() => {
           onNavigate();
-          void authClient.signOut();
+          void signOutAndLeave();
         }}
         className={buttonClasses({ variant: "ghost", size: "sm" })}
       >

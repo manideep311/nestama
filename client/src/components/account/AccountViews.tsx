@@ -2,10 +2,9 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Heart, Loader2, MapPin, Package, Plus } from "lucide-react";
 import { firstFieldErrors, profileUpdateSchema, type AddressDTO, type AddressInput } from "@nestama/shared";
-import { authClient, authErrorMessage, useSession } from "@/lib/auth-client";
+import { authClient, authErrorMessage, signOutAndLeave, useSession } from "@/lib/auth-client";
 import { useAddresses, useDeleteAddress, useOrders, useProductsByIds, useSaveAddress } from "@/lib/account-client";
 import { useWishlist } from "@/lib/wishlist-store";
 import { useToast } from "@/components/toast/ToastProvider";
@@ -490,7 +489,6 @@ function PasswordForm() {
 }
 
 export function AccountProfile() {
-  const router = useRouter();
   const { data: session, isPending } = useSession();
   const [leaving, setLeaving] = useState(false);
 
@@ -517,8 +515,7 @@ export function AccountProfile() {
             disabled={leaving}
             onClick={async () => {
               setLeaving(true);
-              await authClient.signOut();
-              router.replace("/");
+              await signOutAndLeave();
             }}
           >
             Sign out <ArrowRight className="size-4" aria-hidden="true" />

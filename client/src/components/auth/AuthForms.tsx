@@ -3,13 +3,12 @@
 import { useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCircle2, Loader2, MailCheck } from "lucide-react";
-import { authClient, authErrorMessage, useSession } from "@/lib/auth-client";
-import { safeNext } from "@/lib/safe-next";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { authClient, authErrorMessage, reloadTo, useSession } from "@/lib/auth-client";
+import { afterSignIn, safeNext } from "@/lib/safe-next";
+import { Button, ButtonLink, buttonClasses } from "@/components/ui/Button";
 import { FormAlert, PasswordField, TextField } from "@/components/ui/Field";
-import { useToast } from "@/components/toast/ToastProvider";
 import { useEngraveName } from "./AuthShell";
 
 // Only needed after an account exists, so the form (and its validation schema) loads on demand
@@ -40,14 +39,15 @@ function SubmitButton({ pending, children }: { pending: boolean; children: React
 
 /** Shown on /login and /register when a session already exists. */
 function AlreadySignedIn({ name, next }: { name: string; next: string }) {
+  // A plain link, not <Link>: the router may hold a prefetch of `next` from before signing in.
   const [leaving, setLeaving] = useState(false);
   return (
     <div>
       <Heading title="You’re signed in">You’re signed in as {name}.</Heading>
       <div className="flex flex-wrap gap-3">
-        <ButtonLink href={next} size="lg">
+        <a href={next} className={buttonClasses({ size: "lg" })}>
           Continue <ArrowRight className="size-5" aria-hidden="true" />
-        </ButtonLink>
+        </a>
         <Button
           variant="outline"
           size="lg"
@@ -66,7 +66,6 @@ function AlreadySignedIn({ name, next }: { name: string; next: string }) {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const session = useSession();
@@ -76,7 +75,9 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  if (session.data && !pending) return <AlreadySignedIn name={session.data.user.name} next={next} />;
+  if (session.data && !pending) {
+    return <AlreadySignedIn name={session.data.user.name} next={afterSignIn(params.get("next"), session.data.user.role)} />;
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -89,13 +90,13 @@ export function LoginForm() {
 
     setPending(true);
     setFormError(null);
-    const { error } = await authClient.signIn.email({ email: email.trim(), password, rememberMe: true });
+    const { data, error } = await authClient.signIn.email({ email: email.trim(), password, rememberMe: true });
     if (error) {
       setPending(false);
       setFormError(authErrorMessage(error));
       return;
     }
-    router.replace(next);
+    reloadTo(afterSignIn(params.get("next"), data?.user.role));
   }
 
   const registerHref = `/register${next !== "/account" ? `?next=${encodeURIComponent(next)}` : ""}`;
@@ -144,8 +145,6 @@ export function LoginForm() {
 
 /** Sign-up step 2 (optional): the shopper's first pet, so recommendations start right away. */
 function PetStep({ next }: { next: string }) {
-  const router = useRouter();
-  const { show } = useToast();
   return (
     <div>
       <Heading title="Tell us about your pet">
@@ -153,12 +152,9 @@ function PetStep({ next }: { next: string }) {
       </Heading>
       <PetForm
         submitLabel="Save and continue"
-        onSaved={(pet) => {
-          show({ title: `Welcome to the pack, ${pet.name}!`, description: "Your picks are waiting in My pets.", duration: 3500 });
-          router.replace(next);
-        }}
+        onSaved={() => reloadTo(next)}
         secondary={
-          <Button variant="ghost" onClick={() => router.replace(next)}>
+          <Button variant="ghost" onClick={() => reloadTo(next)}>
             Skip for now
           </Button>
         }

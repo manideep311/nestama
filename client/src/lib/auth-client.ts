@@ -19,6 +19,21 @@ export const authClient = createAuthClient({
 
 export const { useSession } = authClient;
 
+/**
+ * Signing in or out changes what every protected page returns, but the router keeps routes it
+ * prefetched under the old session (a guest's /checkout prefetch is a redirect to /login). A full
+ * page load after the change starts from a clean slate, so those stale entries are never reused.
+ */
+export function reloadTo(path: string) {
+  window.location.replace(path);
+}
+
+/** Signs out and leaves for the home page, so no signed-in screen lingers in a broken state. */
+export async function signOutAndLeave() {
+  await authClient.signOut();
+  reloadTo("/");
+}
+
 /** Friendly copy for Better Auth error codes (falls back to the server's own message). */
 export function authErrorMessage(error: { code?: string; message?: string; status?: number } | null | undefined): string {
   if (!error) return "Something went wrong. Please try again.";
