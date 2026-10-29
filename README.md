@@ -167,15 +167,16 @@ The API goes first, because the storefront build prerenders catalog pages from i
    - Render asks for the values below. It generates `BETTER_AUTH_SECRET` and `DEMO_GATEWAY_SECRET` itself.
    - Until the storefront exists, set `CLIENT_ORIGIN` and `BETTER_AUTH_URL` to the URL Vercel will give it (e.g. `https://nestama.vercel.app`), and update them if that changes.
 
-   | Variable                           | Value                                                                                                                                           |
-   | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `DATABASE_URL`, `DIRECT_URL`       | The Supabase session pooler string                                                                                                              |
-   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL` | The storefront's URL                                                                                                                            |
-   | `REVALIDATE_SECRET`                | A random value of 32+ characters, the same one used in Vercel                                                                                   |
-   | `PROXY_SECRET`                     | A random value of 32+ characters, the same one used in Vercel. The API refuses requests without it, so it can't be called around the storefront |
-   | `TRUST_PROXY`                      | `2` (preset), for Vercel's rewrite plus Render's load balancer                                                                                  |
-   | `CLOUDINARY_URL`                   | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy.                                                  |
-   | `RESEND_API_KEY`                   | Optional, for real password-reset emails                                                                                                        |
+   | Variable                                     | Value                                                                                                                                           |
+   | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`, `DIRECT_URL`                 | The Supabase session pooler string                                                                                                              |
+   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL`           | The storefront's URL                                                                                                                            |
+   | `REVALIDATE_SECRET`                          | A random value of 32+ characters, the same one used in Vercel                                                                                   |
+   | `PROXY_SECRET`                               | A random value of 32+ characters, the same one used in Vercel. The API refuses requests without it, so it can't be called around the storefront |
+   | `TRUST_PROXY`                                | `2` (preset), for Vercel's rewrite plus Render's load balancer                                                                                  |
+   | `DEMO_DAILY_ORDER_LIMIT`, `DEMO_RESET_HOURS` | `3` and `24` (preset): see [Live demo protections](#live-demo-protections)                                                                      |
+   | `CLOUDINARY_URL`                             | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy.                                                  |
+   | `RESEND_API_KEY`                             | Optional, for real password-reset emails                                                                                                        |
 
 3. **Storefront: Vercel.**
    - **Add New → Project** → this repository, with **Root Directory** set to `client`. [`client/vercel.json`](client/vercel.json) sets the install and build commands.
@@ -194,6 +195,17 @@ The API goes first, because the storefront build prerenders catalog pages from i
 docker build -f server/Dockerfile -t nestama-api .
 docker run --env-file api.env -p 4000:4000 nestama-api
 ```
+
+## Live demo protections
+
+Anyone can check out on the live demo, and every paid order lowers stock for good, so two guards keep it usable:
+
+- **A daily cap per account.** Each account can pay for `DEMO_DAILY_ORDER_LIMIT` orders per day, counted in Indian time (default 3). After that, checkout says so and suggests coming back tomorrow.
+- **A reset.** Every variant has a restock level, which the seed and any admin stock edit set. A reset puts stock back to that level, less what unpaid orders are still holding. It also gives the seeded promotions and coupons a fresh window once they've ended, so the demo's deals don't run out. It runs:
+  - **On a schedule:** the API checks every hour, and resets once `DEMO_RESET_HOURS` have passed since the last one (default 24). On Render's free plan the instance sleeps when idle, so a due reset happens on its next wake-up.
+  - **On demand:** **Admin → Inventory → Reset demo stock**.
+
+Setting either variable to `0` turns that guard off.
 
 ## Security
 

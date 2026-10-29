@@ -84,6 +84,15 @@ The dashboard at `/admin` is the same Next.js app, using the same API with admin
 
 When an admin changes something shoppers can see, the API calls the storefront's `/revalidate` endpoint with a shared secret. The storefront drops its `catalog` cache, so the change appears without a redeploy.
 
+## Live demo protections
+
+Anyone can check out on the live demo, and each paid order lowers stock permanently, so:
+
+- **A daily cap:** checkout refuses an account that has already paid for `DEMO_DAILY_ORDER_LIMIT` orders today, in Indian time.
+- **A reset:** every variant has a `restockLevel`, set by the seed and by admin stock edits. A reset sets stock back to it, less what unpaid orders are holding, and gives the seeded promotions and coupons a new window once they've ended.
+  - It runs once `DEMO_RESET_HOURS` have passed (checked at boot and hourly), or from the admin Inventory page.
+  - The last run is recorded in `store_settings`.
+
 ## Pet recommendations
 
 Each pet's life stage (puppy or kitten, adult, senior) comes from its birthday or an approximate age, computed in Indian time. Picks are ranked by:
