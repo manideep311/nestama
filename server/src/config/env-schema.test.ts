@@ -8,6 +8,7 @@ const production = {
   NODE_ENV: "production",
   DATABASE_URL: "postgresql://u:p@db.example.com:5432/postgres",
   REVALIDATE_SECRET: SECRET,
+  PROXY_SECRET: SECRET,
   CLIENT_ORIGIN: "https://nestama.example",
   BETTER_AUTH_URL: "https://nestama.example",
 };
@@ -35,6 +36,12 @@ describe("parseEnv", () => {
   it("requires a database and the revalidation secret in production", () => {
     expect(() => parseEnv({ ...production, DATABASE_URL: "" })).toThrow(/DATABASE_URL/);
     expect(() => parseEnv({ ...production, REVALIDATE_SECRET: undefined })).toThrow(/REVALIDATE_SECRET/);
+  });
+
+  it("requires the storefront proxy secret in production, at least 32 characters", () => {
+    expect(() => parseEnv({ ...production, PROXY_SECRET: undefined })).toThrow(/PROXY_SECRET/);
+    expect(() => parseEnv({ ...production, PROXY_SECRET: "short" })).toThrow(/PROXY_SECRET must be at least 32/);
+    expect(parseEnv(base).PROXY_SECRET).toBeUndefined();
   });
 
   it("requires https origins in production, except on localhost", () => {

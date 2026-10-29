@@ -21,6 +21,7 @@ import { petsRouter } from "./modules/pets/pets.routes";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { UPLOAD_DIR } from "./modules/admin/uploads";
 import { docsRouter } from "./docs/docs.routes";
+import { proxyGate } from "./lib/proxy-gate";
 
 /** Sign-in, sign-up and reset attempts: 10 a minute per IP (session reads are not limited). */
 const authLimiter = rateLimit({
@@ -38,6 +39,8 @@ export function createApp(): Express {
   app.disable("x-powered-by");
   // Hops of proxies in front of us (see TRUST_PROXY), so rate limits key on the shopper's IP.
   app.set("trust proxy", env.TRUST_PROXY);
+  // Only the storefront's proxy gets in, so X-Forwarded-For is the one Vercel set.
+  app.use(proxyGate(env.PROXY_SECRET));
   app.use(helmet());
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
 
