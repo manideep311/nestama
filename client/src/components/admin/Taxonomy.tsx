@@ -12,6 +12,7 @@ import {
   type AdminInventoryRowDTO,
   type BrandInput,
   type CategoryInput,
+  type DemoResetResultDTO,
 } from "@nestama/shared";
 import { errorMessage, useAdminMutation, useAdminQuery } from "@/lib/admin-client";
 import { useToast } from "@/components/toast/ToastProvider";
@@ -333,6 +334,11 @@ export function Inventory({ initialLow = false }: { initialLow?: boolean }) {
     (body) => ({ path: "/inventory", method: "PATCH", body }),
     [["inventory"], ["products"], ["overview"]],
   );
+  // Live demo: restore stock and renew the seeded deals now (it also runs on its own every day).
+  const reset = useAdminMutation<void, DemoResetResultDTO>(
+    () => ({ path: "/demo/reset", method: "POST" }),
+    [["inventory"], ["products"], ["overview"], ["promotions"], ["coupons"]],
+  );
   const changed = Object.entries(edits).filter(([id, v]) => {
     const row = list.data?.find((r) => r.variantId === id);
     return row && v !== "" && Number(v) !== row.stock && Number(v) >= 0;
@@ -343,25 +349,46 @@ export function Inventory({ initialLow = false }: { initialLow?: boolean }) {
       title="Inventory"
       description="Stock for every product option. Edit the numbers, then save them together."
       actions={
-        <button
-          type="button"
-          className={btn.primary}
-          disabled={changed.length === 0 || save.isPending}
-          onClick={() =>
-            save.mutate(
-              { items: changed.map(([variantId, v]) => ({ variantId, stock: Number.parseInt(v, 10) })) },
-              {
+        <div className="flex flex-wrap items-center gap-2">
+          <ConfirmButton
+            label="Reset demo stock"
+            confirmLabel="Reset now"
+            pending={reset.isPending}
+            onConfirm={() =>
+              reset.mutate(undefined, {
                 onSuccess: (r) => {
                   setEdits({});
-                  show({ title: `Stock updated for ${r.updated} option${r.updated === 1 ? "" : "s"}`, icon: "check", duration: 2500 });
+                  show({
+                    title: "Demo reset",
+                    description: `${r.restockedVariants} option${r.restockedVariants === 1 ? "" : "s"} restocked, ${r.renewedDeals} deal${r.renewedDeals === 1 ? "" : "s"} renewed.`,
+                    icon: "check",
+                    duration: 3500,
+                  });
                 },
-                onError: (e) => show({ title: "Couldn't save stock", description: errorMessage(e), icon: "alert" }),
-              },
-            )
-          }
-        >
-          Save {changed.length > 0 ? `${changed.length} change${changed.length === 1 ? "" : "s"}` : "changes"}
-        </button>
+                onError: (e) => show({ title: "Couldn't reset the demo", description: errorMessage(e), icon: "alert" }),
+              })
+            }
+          />
+          <button
+            type="button"
+            className={btn.primary}
+            disabled={changed.length === 0 || save.isPending}
+            onClick={() =>
+              save.mutate(
+                { items: changed.map(([variantId, v]) => ({ variantId, stock: Number.parseInt(v, 10) })) },
+                {
+                  onSuccess: (r) => {
+                    setEdits({});
+                    show({ title: `Stock updated for ${r.updated} option${r.updated === 1 ? "" : "s"}`, icon: "check", duration: 2500 });
+                  },
+                  onError: (e) => show({ title: "Couldn't save stock", description: errorMessage(e), icon: "alert" }),
+                },
+              )
+            }
+          >
+            Save {changed.length > 0 ? `${changed.length} change${changed.length === 1 ? "" : "s"}` : "changes"}
+          </button>
+        </div>
       }
     >
       <Panel>
