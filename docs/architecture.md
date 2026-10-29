@@ -42,6 +42,7 @@ Money is stored as whole paise (integers), never as floating-point rupees.
 3. **Verify** (`POST /payments/verify`).
    - The API checks the signature and the amount, then settles everything in one transaction:
      - captures the payment and confirms the order;
+     - claims one use of the coupon with a conditional update (`usedCount < usageLimit`), so concurrent payments can't overshoot its limit. If the last use was just taken, nothing is captured: the order closes and its stock returns;
      - records the coupon redemption;
      - adds to each product's sold count;
      - removes the purchased lines from the cart.

@@ -86,44 +86,69 @@ export async function verifyPayment(
     throw new AppError("AMOUNT_MISMATCH", 409, "The payment amount doesn't match the order. Please check out again.");
 
   const order = payment.order;
-  await prisma.$transaction(async (tx) => {
-    const captured = await tx.payment.updateMany({
-      where: { id: payment.id, status: "CREATED", gatewayPaymentId: input.gatewayPaymentId },
-      data: { status: "CAPTURED" },
-    });
-    if (captured.count === 0) return; // a concurrent verify already settled it
-    const confirmed = await tx.order.updateMany({
-      where: { id: order.id, status: "PENDING_PAYMENT" },
-      data: { status: "CONFIRMED", paidAt: now, expiresAt: null },
-    });
-    if (confirmed.count === 0) throw expired(); // rolls the capture back
-
-    const method = (payment.method ?? "UPI") as PaymentMethodValue;
-    await tx.orderEvent.create({
-      data: { orderId: order.id, status: "CONFIRMED", note: `Payment received via ${METHOD_LABEL[method]}`, createdAt: now },
-    });
-
-    if (order.couponCode) {
-      const coupon = await tx.coupon.findUnique({ where: { code: order.couponCode }, select: { id: true } });
-      if (coupon) {
-        await tx.couponRedemption.create({ data: { couponId: coupon.id, userId, orderId: order.id } });
-        await tx.coupon.update({ where: { id: coupon.id }, data: { usedCount: { increment: 1 } } });
-      }
-    }
-
-    const soldByProduct = new Map<string, number>();
-    for (const item of order.items)
-      if (item.productId) soldByProduct.set(item.productId, (soldByProduct.get(item.productId) ?? 0) + item.quantity);
-    for (const [productId, quantity] of soldByProduct)
-      await tx.product.update({ where: { id: productId }, data: { soldCount: { increment: quantity } } });
-
-    const cart = await tx.cart.findUnique({ where: { userId }, select: { id: true } });
-    if (cart) {
-      const purchased = order.items.map((i) => i.variantId).filter((id): id is string => Boolean(id));
-      await tx.cartItem.deleteMany({ where: { cartId: cart.id, variantId: { in: purchased } } });
-      await tx.cart.update({ where: { id: cart.id }, data: { couponCode: null } });
-    }
-  });
-
+  try {
+    await settle();
+  } catch (err) {
+    if (!(err instanceof CouponExhausted)) throw err;
+    // Another payment took the coupon's last use first: nothing was captured, so close the order
+    // and return its stock rather than leave it waiting for a payment that can't succeed.
+    const note = `${order.couponCode} ran out before this payment completed`;
+    await prisma.$transaction((tx) => closeUnpaidOrder(tx, order.id, "PAYMENT_FAILED", note, "Coupon limit reached"));
+    throw new AppError(
+      "COUPON_EXHAUSTED",
+      409,
+      `${order.couponCode} has just run out, so this order was cancelled before any payment was taken. Please check out again.`,
+    );
+  }
   return getOrder(userId, order.id);
+
+  async function settle() {
+    await prisma.$transaction(async (tx) => {
+      const captured = await tx.payment.updateMany({
+        where: { id: payment.id, status: "CREATED", gatewayPaymentId: input.gatewayPaymentId },
+        data: { status: "CAPTURED" },
+      });
+      if (captured.count === 0) return; // a concurrent verify already settled it
+      const confirmed = await tx.order.updateMany({
+        where: { id: order.id, status: "PENDING_PAYMENT" },
+        data: { status: "CONFIRMED", paidAt: now, expiresAt: null },
+      });
+      if (confirmed.count === 0) throw expired(); // rolls the capture back
+
+      const method = (payment.method ?? "UPI") as PaymentMethodValue;
+      await tx.orderEvent.create({
+        data: { orderId: order.id, status: "CONFIRMED", note: `Payment received via ${METHOD_LABEL[method]}`, createdAt: now },
+      });
+
+      if (order.couponCode) {
+        const coupon = await tx.coupon.findUnique({ where: { code: order.couponCode }, select: { id: true } });
+        if (coupon) {
+          // Claim a use only while one is left. Under concurrent payments Postgres re-checks this
+          // condition once the row lock is free, so the limit can't be overshot.
+          const claimed = await tx.coupon.updateMany({
+            where: { id: coupon.id, OR: [{ usageLimit: null }, { usedCount: { lt: prisma.coupon.fields.usageLimit } }] },
+            data: { usedCount: { increment: 1 } },
+          });
+          if (claimed.count === 0) throw new CouponExhausted(); // rolls back the capture
+          await tx.couponRedemption.create({ data: { couponId: coupon.id, userId, orderId: order.id } });
+        }
+      }
+
+      const soldByProduct = new Map<string, number>();
+      for (const item of order.items)
+        if (item.productId) soldByProduct.set(item.productId, (soldByProduct.get(item.productId) ?? 0) + item.quantity);
+      for (const [productId, quantity] of soldByProduct)
+        await tx.product.update({ where: { id: productId }, data: { soldCount: { increment: quantity } } });
+
+      const cart = await tx.cart.findUnique({ where: { userId }, select: { id: true } });
+      if (cart) {
+        const purchased = order.items.map((i) => i.variantId).filter((id): id is string => Boolean(id));
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id, variantId: { in: purchased } } });
+        await tx.cart.update({ where: { id: cart.id }, data: { couponCode: null } });
+      }
+    });
+  }
 }
+
+/** Thrown inside the settle transaction when the coupon has no uses left (rolls the capture back). */
+class CouponExhausted extends Error {}
