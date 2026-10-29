@@ -55,7 +55,7 @@ The browser only ever talks to the storefront's origin: Next.js rewrites `/api/*
 client/   Next.js storefront and admin dashboard
 server/   Express API, Prisma schema, migrations and seed data
 shared/   Types, Zod schemas and helpers used by both
-docs/     Design specs and build plans
+docs/     Architecture notes (docs/architecture.md) and brand assets
 ```
 
 ## Running it locally
