@@ -40,6 +40,10 @@ const envSchema = z
     CLIENT_INTERNAL_URL: optional,
     /** Shared with the storefront's proxy: requests without it are refused (see lib/proxy-gate.ts). */
     PROXY_SECRET: optional,
+    /** Live demo: paid orders an account may place per day (Indian time). 0 turns the cap off. */
+    DEMO_DAILY_ORDER_LIMIT: z.coerce.number().int().min(0, "DEMO_DAILY_ORDER_LIMIT must be 0 or more").max(1000).default(3),
+    /** Live demo: restore stock and renew seeded deals this often, in hours. 0 turns it off. */
+    DEMO_RESET_HOURS: z.coerce.number().int().min(0, "DEMO_RESET_HOURS must be 0 or more").max(720).default(24),
     EMAIL_FROM: z.string().default("NESTAMA <hello@nestama.test>"),
   })
   .superRefine((e, ctx) => {

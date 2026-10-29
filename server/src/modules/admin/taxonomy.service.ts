@@ -192,7 +192,9 @@ export async function updateStock(items: { variantId: string; stock: number }[])
   const found = await prisma.productVariant.count({ where: { id: { in: ids } } });
   if (found !== ids.length)
     throw new AppError("VARIANT_NOT_FOUND", 404, "Some of those product options no longer exist. Refresh and try again.");
-  await prisma.$transaction(items.map((i) => prisma.productVariant.update({ where: { id: i.variantId }, data: { stock: i.stock } })));
+  await prisma.$transaction(
+    items.map((i) => prisma.productVariant.update({ where: { id: i.variantId }, data: { stock: i.stock, restockLevel: i.stock } })),
+  );
   revalidateStorefront();
   return { updated: items.length };
 }

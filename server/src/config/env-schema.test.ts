@@ -29,6 +29,15 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, TRUST_PROXY: "-1" })).toThrow(/TRUST_PROXY/);
   });
 
+  it("protects the live demo by default, and 0 turns each protection off", () => {
+    expect(parseEnv(base)).toMatchObject({ DEMO_DAILY_ORDER_LIMIT: 3, DEMO_RESET_HOURS: 24 });
+    expect(parseEnv({ ...base, DEMO_DAILY_ORDER_LIMIT: "0", DEMO_RESET_HOURS: "0" })).toMatchObject({
+      DEMO_DAILY_ORDER_LIMIT: 0,
+      DEMO_RESET_HOURS: 0,
+    });
+    expect(() => parseEnv({ ...base, DEMO_DAILY_ORDER_LIMIT: "-1" })).toThrow(/DEMO_DAILY_ORDER_LIMIT/);
+  });
+
   it("accepts a complete production environment", () => {
     expect(parseEnv(production).NODE_ENV).toBe("production");
   });

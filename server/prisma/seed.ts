@@ -116,6 +116,7 @@ async function seedProducts() {
         price: rupeesToPaise(v.price),
         mrp: v.mrp ? rupeesToPaise(v.mrp) : null,
         stock: v.stock,
+        restockLevel: v.stock,
         isDefault: i === 0,
         sortOrder: i,
       };

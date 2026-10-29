@@ -29,6 +29,7 @@ import * as promotions from "./promotions.service";
 import * as orders from "./orders.service";
 import * as people from "./people.service";
 import * as stats from "./stats.service";
+import { resetDemoStore } from "../demo/demo.service";
 
 /**
  * Everything under /api/v1/admin. The role gate runs once here, so no admin route can be added
@@ -132,6 +133,11 @@ adminRouter.get("/inventory", validate({ query: inventoryQuerySchema }), async (
 });
 adminRouter.patch("/inventory", validate({ body: stockUpdateSchema }), async (_req, res) => {
   res.json(await taxonomy.updateStock((res.locals.body as { items: { variantId: string; stock: number }[] }).items));
+});
+
+// Live demo: restore stock and renew the seeded deals now (it also runs on its own every day).
+adminRouter.post("/demo/reset", async (_req, res) => {
+  res.json(await resetDemoStore());
 });
 
 // ───────── Promotions & coupons ─────────

@@ -267,6 +267,8 @@ model ProductVariant {
   price             Int
   mrp               Int?
   stock             Int      @default(0)
+  /// Live demo: the level a reset restores stock to (set by the seed and by admin stock edits).
+  restockLevel      Int?
   lowStockThreshold Int      @default(5)
   isDefault         Boolean  @default(false)
   sortOrder         Int      @default(0)
@@ -533,6 +535,8 @@ model StoreSettings {
   popularSearches       String[] @default([])
   supportEmail          String
   supportPhone          String
+  /// Live demo: when stock and seeded deals were last reset.
+  demoResetAt           DateTime?
   updatedAt             DateTime @updatedAt
 
   @@map("store_settings")
