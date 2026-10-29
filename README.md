@@ -2,9 +2,29 @@
 
 [![CI](https://github.com/manideep311/nestama/actions/workflows/ci.yml/badge.svg)](https://github.com/manideep311/nestama/actions/workflows/ci.yml)
 
+**Live demo: https://nestama.vercel.app**
+
 A full-stack pet store for dogs and cats: a Next.js storefront, an Express + Prisma API, an admin dashboard, and a demo payment gateway.
 
 > **Portfolio project.** The products are samples and checkout uses NestaPay, a simulated gateway. No real orders are placed and no money moves.
+
+> **First visit may be slow.** The API runs on Render's free plan, which sleeps after 15 minutes without traffic. The first request after that takes about a minute while it wakes up; pages the storefront has already cached load straight away.
+
+| Storefront                                                   | Product page                                                                              | Admin dashboard                                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| ![The storefront home page](docs/screenshots/storefront.jpg) | ![A product page with sizes, price and delivery check](docs/screenshots/product-page.jpg) | ![The admin dashboard with KPIs and a revenue chart](docs/screenshots/admin-dashboard.jpg) |
+
+<sub>Captured at 1440×900 from a local run with the seeded catalogue. The dashboard shows that run's own (small) order history.</sub>
+
+## Try it
+
+- **As a shopper, on the live site.**
+  - Create an account at https://nestama.vercel.app (and add a pet if you like).
+  - Fill the cart and check out with a [NestaPay test value](#demo-values).
+  - Each account can pay for three demo orders a day (see [Live demo protections](#live-demo-protections)).
+- **As an admin, on your machine.** The live site's admin account isn't shared.
+  - Run the store locally ([Running it locally](#running-it-locally)). The seed creates an admin account from the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you choose in `server/.env`.
+  - Sign in at http://localhost:3000/login with those details. Admins land on the dashboard at `/admin`: orders, products, inventory, promotions, reports and settings.
 
 ## Features
 
