@@ -14,7 +14,7 @@ Browser ──> Next.js storefront (Vercel) ──/api/*, /uploads/*──> Expr
 - **`server/`**: the Express API. It handles validation, pricing, stock, orders, payments, auth and admin. Prisma talks to PostgreSQL through the `pg` adapter.
 - **`shared/`**: Zod schemas, DTO types and small helpers (money, dates, pet life stages) used by both sides, so a form and the endpoint behind it validate the same way.
 
-The browser only ever talks to the storefront's origin. Next.js forwards `/api/*` and `/uploads/*` to the API, so session cookies stay first-party.
+The browser only ever talks to the storefront's origin. The storefront's proxy forwards `/api/*` and `/uploads/*` to the API, so session cookies stay first-party.
 
 ## Data model
 
@@ -69,6 +69,7 @@ Cancelling a paid order returns stock, reverses the sold count and frees the cou
 - **Page redirects:** the storefront's proxy sends signed-out visitors to the sign-in page before account, checkout, order and admin pages. This is for convenience only.
 - **Full page load after sign-in or sign-out:** the router may hold pages it prefetched under the old session, such as a guest's redirect from `/checkout` to sign-in, and a full load discards them.
   - After sign-in, admins land on `/admin` and customers on their account (or the page they came from).
+- **Only through the storefront:** in production the storefront's proxy adds a shared secret (`PROXY_SECRET`) to every request it forwards, and the API refuses anything without it (the health check excepted). Direct calls can't reach the API, so the `X-Forwarded-For` it sees is the one Vercel set, and the rate limits key on the shopper's real address.
 - **Writes from other sites:** API writes whose `Origin` isn't the storefront's get a 403.
 
 ## Admin
