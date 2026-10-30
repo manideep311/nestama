@@ -244,33 +244,72 @@ The header's typeahead understands what a shopper means, not just the words they
 
 ### Evaluation
 
-`pnpm --filter server eval:search` runs 33 queries from [`server/eval/search-questions.json`](server/eval/search-questions.json) against the seeded catalogue and scores the first correct product in the top 10. Results from a local run:
+`pnpm --filter server eval:search` runs the 43 queries in [`server/eval/search-questions.json`](server/eval/search-questions.json) against the seeded catalogue, through three searches:
 
-| Queries         | Keyword only: hit@1 / hit@5 / MRR | Hybrid (`w = 0.5`): hit@1 / hit@5 / MRR |
-| --------------- | --------------------------------- | --------------------------------------- |
-| All 33          | 18.2% / 18.2% / 0.182             | 90.9% / 97.0% / 0.929                   |
-| 6 keyword-style | 100% / 100% / 1.000               | 100% / 100% / 1.000                     |
-| 26 natural      | 0% / 0% / 0.000                   | 88.5% / 96.2% / 0.910                   |
-| 1 typo          | 0% / 0% / 0.000                   | 100% / 100% / 1.000                     |
+- **Keyword only:** the store's search with semantic search off. Every word must match.
+- **Full-text:** a PostgreSQL full-text baseline, which the store doesn't use. Any word can match (stemmed, with English stop words dropped), ranked by `ts_rank`. The name weighs most, then brand, category, tags and species, then the description.
+- **Hybrid:** the store's search, at `w = 0.5` and a minimum similarity of 0.3.
 
-Weights of 0.2, 0.5 and 0.8 scored the same. On this set, the weight only reorders keyword matches, and none of the misses came down to order.
+33 queries have answers, and each is scored on the first correct product in the top 10. The other 10 are off-catalogue, like "hamster wheel" or "laptop charger": the store sells nothing that fits, so any product shown for them is irrelevant. Results from a local run:
+
+| Queries                                           | Keyword only          | Full-text (any word)  | Hybrid               |
+| ------------------------------------------------- | --------------------- | --------------------- | -------------------- |
+| 33 with answers: hit@1 / hit@5 / MRR              | 18.2% / 18.2% / 0.182 | 75.8% / 81.8% / 0.796 | 90.9% / 100% / 0.933 |
+| 6 keyword-style                                   | 100% / 100% / 1.000   | 100% / 100% / 1.000   | 100% / 100% / 1.000  |
+| 26 natural-language                               | 0% / 0% / 0.000       | 69.2% / 76.9% / 0.741 | 88.5% / 100% / 0.915 |
+| 1 typo ("tenis ball")                             | 0% / 0% / 0.000       | 100% / 100% / 1.000   | 100% / 100% / 1.000  |
+| 10 off-catalogue: queries that show any product   | 0%                    | 40%                   | 40%                  |
+| 10 off-catalogue: products shown per query (of 6) | 0.0                   | 0.6                   | 1.4                  |
+
+- **Full-text vs hybrid:** full-text missed "my dog eats too fast", "carry my cat on a flight", "reduce shedding" and "upset stomach dog" entirely. It found "tenis ball" through "ball".
+- **Weight:** 0.2, 0.5 and 0.8 scored the same. On this set, the weight only reorders keyword matches, and none of the misses came down to order.
+- **Repeatability:** the scores repeat across fresh re-embeds, because products are embedded one at a time (see [docs/architecture.md](docs/architecture.md#search)).
+
+**Choosing `SEARCH_MIN_SIMILARITY`** (`eval:search --min-similarity=…`):
+
+| `SEARCH_MIN_SIMILARITY` | 33 with answers: hit@1 / hit@5 / MRR | Off-catalogue: queries that show any product / products per query |
+| ----------------------- | ------------------------------------ | ----------------------------------------------------------------- |
+| 0.25                    | 90.9% / 100% / 0.933                 | 70% / 2.8                                                         |
+| **0.30 (default)**      | 90.9% / 100% / 0.933                 | 40% / 1.4                                                         |
+| 0.31                    | 87.9% / 93.9% / 0.895                | 40% / 1.3                                                         |
+| 0.35                    | 87.9% / 90.9% / 0.889                | 30% / 0.6                                                         |
+| 0.40                    | 81.8% / 81.8% / 0.818                | 20% / 0.2                                                         |
+| 0.45                    | 75.8% / 75.8% / 0.758                | 10% / 0.1                                                         |
+| 0.50                    | 72.7% / 72.7% / 0.727                | 0% / 0.0                                                          |
+
+The default stays at 0.30, the highest value that keeps every answered query's correct product in the top 5:
+
+- **Why recall wins:** a typeahead that hides the right product costs more than one that also shows a loosely related one.
+- **Going lower** finds nothing new and doubles the irrelevant results.
+- **Going higher** loses correct answers fast: 0.31 already drops two from the top 5.
+- **It's a narrow edge.** Several correct answers score between 0.300 and 0.319. "reduce shedding", for one, finds the deshedding glove at 0.303. A different model build could move them.
 
 ### Limitations
 
-- **A small, home-made test.** The 33 queries and their answers were written for this project, with the catalogue in view, for 73 products. The scores show the approach works on this catalogue, not how it would do with real shoppers' queries. Each query is about 3 percentage points.
-- **A strict baseline.** The keyword search needs every word to match, so it scores 0 on natural-language queries by design. A ranked keyword search (BM25, say) would do better than that.
-- **Loose matches for things the store doesn't sell.** "bird cage" shows four products, including a cat window hammock, because they clear the similarity threshold. Raising `SEARCH_MIN_SIMILARITY` trades recall for fewer of these.
+- **A small, home-made test:**
+  - The 43 queries and their answers were written for this project, with the catalogue in view, for 73 products. Each answered query is about 3 percentage points, and each off-catalogue query is 10.
+  - Some off-catalogue queries were tried while the feature was being built.
+  - The threshold was chosen on the same queries it's scored on.
+  - So the scores show the approach works on this catalogue, not how it would do with real shoppers' queries.
+- **The keyword baseline is strict.** The store's keyword search needs every word to match, so it scores 0 on natural-language queries by design. The full-text baseline is the fairer comparison.
+- **Loose matches for things the store doesn't sell.** At the default threshold, 4 of the 10 off-catalogue queries show products:
+  - "horse saddle" shows the dog saddlebag, a harness, the car seat cover and the booster bed;
+  - "bird cage" shows the scratching lounge, the window hammock and a bowl.
+- **Loose matches next to right ones, unmeasured.** Answered queries can also show loosely related products. "upset stomach dog" ranks cat treats first and the probiotic chews fifth, because the model doesn't weigh species strongly. The evaluation only scores where the first correct product lands.
 - **English only.** The model was trained on English, so Hindi or Hinglish queries match poorly.
 - **Typeahead only.** The `/shop?q=` listing still filters by keywords.
 - **A model download.** The quantised model (about 23 MB) comes from the Hugging Face Hub. Render's build fetches it ahead of time (`model:fetch`); the Docker image downloads it on first start. If it can't be loaded, search falls back to keywords.
-- **Memory.** Measured in the production Docker image (Linux, Node 24) after boot and the 33 evaluation searches:
+- **Memory.** Measured in the production Docker image (Linux, Node 24) after boot and the 43 evaluation searches:
 
-  | `SEARCH_SEMANTIC_WEIGHT` | API process RSS (peak) | Container memory (peak) | Time per search request |
-  | ------------------------ | ---------------------- | ----------------------- | ----------------------- |
-  | `0` (keywords only)      | 197 MB (211 MB)        | 146 MiB (169 MiB)       | 27.7 ms                 |
-  | `0.5`                    | 324 MB (347 MB)        | 244 MiB (299 MiB)       | 47.0 ms                 |
-
-  So the model adds about 130 MB, and the peak stays under the 512 MB of Render's free plan. These numbers are from a local machine, not from Render. Render's free instances have much less CPU, so expect slower searches there. If memory gets tight, set `SEARCH_SEMANTIC_WEIGHT=0`.
+  | Run                                                | API process RSS (peak) | Container memory (peak) |
+  | -------------------------------------------------- | ---------------------- | ----------------------- |
+  | `SEARCH_SEMANTIC_WEIGHT=0` (keywords only)         | 213 MB (213 MB)        | 166 MiB (174 MiB)       |
+  | `0.5`, first boot (downloads the model, embeds 73) | 322 MB (322 MB)        | 242 MiB (270 MiB)       |
+  | `0.5`, later boot (vectors already stored)         | 303 MB (303 MB)        | 222 MiB (235 MiB)       |
+  - **What the model costs:** about 90 to 110 MB of RSS.
+  - **The worst peak seen:** one earlier first boot reached 391 MiB of container memory (RSS peak 320 MB), and a repeat didn't reproduce it. That's still under the 512 MB of Render's free plan, but treat about 120 MB as the real headroom.
+  - **Speed:** a search request took 46 to 51 ms with the model, and 28 to 39 ms without, across runs. Timings on this machine vary that much.
+  - **Not measured on Render.** Its free instances have much less CPU, so expect slower searches there. If memory gets tight, set `SEARCH_SEMANTIC_WEIGHT=0`.
 
 ## Security
 

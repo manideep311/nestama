@@ -115,11 +115,11 @@ The blend scores each product as `(1 − w) × keyword + w × similarity`, with 
 - A product found only by meaning needs a similarity of at least `SEARCH_MIN_SIMILARITY` to be shown.
 - `w = 0` is the keyword search alone, and the model is never loaded.
 
-The model runs inside the API (ONNX on the CPU, through Transformers.js), so there's no API key and no per-query cost. Vectors stay current in three ways:
+The model runs inside the API (ONNX on the CPU, through Transformers.js), so there's no API key and no per-query cost. Texts are embedded one at a time: the quantised model scales its activations across a whole batch, so a product embedded alongside others came out slightly different (cosine ≈ 0.99 to itself), which was enough to reorder close results between re-embeds. Vectors stay current in three ways:
 - The API embeds any product without one at boot.
 - Admin edits to a product, or to its category's name, re-embed it.
 - Each vector records the model that made it, so a model change re-embeds everything, and vectors from different models are never compared.
 
 If embedding fails, search falls back to keywords and admin edits still save.
 
-`pnpm --filter server eval:search` scores both searches on a hand-written query set (`server/eval/search-questions.json`).
+`pnpm --filter server eval:search` scores keyword-only, hybrid and a PostgreSQL full-text baseline on a query set written for the project (`server/eval/search-questions.json`), including off-catalogue queries that should show nothing.
