@@ -5,6 +5,7 @@ import { newGatewayId, newOrderNumber } from "../../lib/order-number";
 import type { Prisma } from "../../generated/prisma/client";
 import { loadUserCart, priceCart } from "../cart/cart.service";
 import { closeUnpaidOrder } from "../orders/order-expiry";
+import { assertDailyOrderLimit } from "../demo/demo.service";
 
 type Tx = Prisma.TransactionClient;
 
@@ -25,6 +26,7 @@ async function uniqueOrderNumber(tx: Tx): Promise<string> {
 export async function createCheckoutOrder(userId: string, addressId: string, now = new Date()): Promise<CheckoutOrderDTO> {
   const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
   if (!address) throw new AppError("ADDRESS_NOT_FOUND", 404, "Choose a delivery address to continue.");
+  await assertDailyOrderLimit(userId, now);
 
   const cart = await loadUserCart(userId);
   if (!cart || cart.items.length === 0) throw new AppError("CART_EMPTY", 422, "Your cart is empty.");

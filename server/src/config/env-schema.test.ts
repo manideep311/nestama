@@ -8,6 +8,7 @@ const production = {
   NODE_ENV: "production",
   DATABASE_URL: "postgresql://u:p@db.example.com:5432/postgres",
   REVALIDATE_SECRET: SECRET,
+  PROXY_SECRET: SECRET,
   CLIENT_ORIGIN: "https://nestama.example",
   BETTER_AUTH_URL: "https://nestama.example",
 };
@@ -28,6 +29,15 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, TRUST_PROXY: "-1" })).toThrow(/TRUST_PROXY/);
   });
 
+  it("protects the live demo by default, and 0 turns each protection off", () => {
+    expect(parseEnv(base)).toMatchObject({ DEMO_DAILY_ORDER_LIMIT: 3, DEMO_RESET_HOURS: 24 });
+    expect(parseEnv({ ...base, DEMO_DAILY_ORDER_LIMIT: "0", DEMO_RESET_HOURS: "0" })).toMatchObject({
+      DEMO_DAILY_ORDER_LIMIT: 0,
+      DEMO_RESET_HOURS: 0,
+    });
+    expect(() => parseEnv({ ...base, DEMO_DAILY_ORDER_LIMIT: "-1" })).toThrow(/DEMO_DAILY_ORDER_LIMIT/);
+  });
+
   it("accepts a complete production environment", () => {
     expect(parseEnv(production).NODE_ENV).toBe("production");
   });
@@ -35,6 +45,12 @@ describe("parseEnv", () => {
   it("requires a database and the revalidation secret in production", () => {
     expect(() => parseEnv({ ...production, DATABASE_URL: "" })).toThrow(/DATABASE_URL/);
     expect(() => parseEnv({ ...production, REVALIDATE_SECRET: undefined })).toThrow(/REVALIDATE_SECRET/);
+  });
+
+  it("requires the storefront proxy secret in production, at least 32 characters", () => {
+    expect(() => parseEnv({ ...production, PROXY_SECRET: undefined })).toThrow(/PROXY_SECRET/);
+    expect(() => parseEnv({ ...production, PROXY_SECRET: "short" })).toThrow(/PROXY_SECRET must be at least 32/);
+    expect(parseEnv(base).PROXY_SECRET).toBeUndefined();
   });
 
   it("requires https origins in production, except on localhost", () => {

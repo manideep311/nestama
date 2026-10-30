@@ -48,6 +48,9 @@ services:
       # Must equal REVALIDATE_SECRET in the Vercel project.
       - key: REVALIDATE_SECRET
         sync: false
+      # Must equal PROXY_SECRET in the Vercel project: requests without it are refused.
+      - key: PROXY_SECRET
+        sync: false
       # Optional: admin image uploads (otherwise they land on Render's disk, wiped on redeploy).
       - key: CLOUDINARY_URL
         sync: false
@@ -56,3 +59,8 @@ services:
         sync: false
       - key: EMAIL_FROM
         value: "NESTAMA <hello@nestama.test>"
+      # Live demo protections: paid orders per account per day, and the stock and deals reset interval.
+      - key: DEMO_DAILY_ORDER_LIMIT
+        value: "3"
+      - key: DEMO_RESET_HOURS
+        value: "24"

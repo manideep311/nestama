@@ -475,3 +475,12 @@ export interface UploadResultDTO {
   width: number;
   height: number;
 }
+
+/** Result of resetting the live demo (POST /admin/demo/reset, and the daily automatic run). */
+export interface DemoResetResultDTO {
+  /** Variants whose stock went back to their restock level. */
+  restockedVariants: number;
+  /** Seeded promotions and coupons that had ended and got a fresh window. */
+  renewedDeals: number;
+  resetAt: string;
+}

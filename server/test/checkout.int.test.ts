@@ -46,6 +46,7 @@ describe.skipIf(!hasDb)("checkout and NestaPay demo payments", () => {
 
   afterAll(async () => {
     await deleteTestUsers();
+    await prisma.coupon.deleteMany({ where: { code: { startsWith: "QA-RACE-" } } });
     await prisma.$disconnect();
   });
 
@@ -137,6 +138,39 @@ describe.skipIf(!hasDb)("checkout and NestaPay demo payments", () => {
 
     const history = (await agent.get("/api/v1/account/orders").expect(200)).body as Paginated<OrderSummaryDTO>;
     expect(history.items[0]).toMatchObject({ id: order.orderId, status: "CONFIRMED", itemCount: 3 });
+  });
+
+  it("never lets concurrent payments use a coupon past its limit", async () => {
+    const code = `QA-RACE-${Date.now().toString(36).toUpperCase()}`;
+    const now = Date.now();
+    await prisma.coupon.create({
+      data: { code, type: "FIXED", value: 5000, startsAt: new Date(now - 60_000), endsAt: new Date(now + 3_600_000), usageLimit: 1 },
+    });
+
+    // Both shoppers pass the pricing check (the coupon is still unused) and reach the gateway.
+    const ready = [];
+    for (const tag of ["race-a", "race-b"]) {
+      const s = await shopper(tag);
+      await addToCart(s.agent, biscuits.variantId, 1);
+      await s.agent.post("/api/v1/cart/coupon").send({ code }).expect(200);
+      const order = await placeOrder(s.agent, s.addressId);
+      const auth = (await authorize(s.agent, order).expect(200)).body as Extract<AuthorizeResultDTO, { status: "authorized" }>;
+      ready.push({ agent: s.agent, order, auth });
+    }
+    const stockBefore = await stockOf(biscuits.variantId);
+
+    const results = await Promise.all(ready.map(({ agent, order, auth }) => verify(agent, order, auth)));
+    expect(results.map((r) => r.status).sort()).toEqual([200, 409]);
+    const lost = results.findIndex((r) => r.status === 409);
+    expect(results[lost]!.body.error.code).toBe("COUPON_EXHAUSTED");
+
+    expect((await prisma.coupon.findUniqueOrThrow({ where: { code } })).usedCount).toBe(1);
+    expect(await prisma.couponRedemption.count({ where: { coupon: { code } } })).toBe(1);
+    // The shopper who lost the race isn't charged: the order is closed and its stock is back.
+    const loser = await prisma.order.findUniqueOrThrow({ where: { id: ready[lost]!.order.orderId }, include: { payments: true } });
+    expect(loser.status).toBe("PAYMENT_FAILED");
+    expect(loser.payments.every((p) => p.status !== "CAPTURED")).toBe(true);
+    expect(await stockOf(biscuits.variantId)).toBe(stockBefore + 1);
   });
 
   it("rejects a tampered signature and leaves the order unpaid", async () => {

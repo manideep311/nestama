@@ -180,6 +180,7 @@ function variantFields(v: AdminProductData["variants"][number], sortOrder: numbe
     price: v.price,
     mrp: v.mrp,
     stock: v.stock,
+    restockLevel: v.stock, // an admin's stock edit is the level the demo reset returns to
     lowStockThreshold: v.lowStockThreshold,
     isDefault: v.isDefault,
     sortOrder,

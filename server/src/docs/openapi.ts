@@ -93,27 +93,48 @@ export const ROUTES: ApiRoute[] = [
   route("post", "/api/auth/sign-in/email", "Auth", "Sign in", "public", { body: authBodies.signIn, limited: true }),
   route("post", "/api/auth/sign-out", "Auth", "Sign out", "user"),
   route("get", "/api/auth/get-session", "Auth", "Current session and user (null when signed out)", "public"),
-  route("post", "/api/auth/request-password-reset", "Auth", "Email a password reset link", "public", { body: authBodies.requestReset, limited: true }),
-  route("post", "/api/auth/reset-password", "Auth", "Set a new password with a reset token", "public", { body: authBodies.reset, limited: true }),
-  route("post", "/api/auth/change-password", "Auth", "Change the password while signed in", "user", { body: authBodies.changePassword, limited: true }),
+  route("post", "/api/auth/request-password-reset", "Auth", "Email a password reset link", "public", {
+    body: authBodies.requestReset,
+    limited: true,
+  }),
+  route("post", "/api/auth/reset-password", "Auth", "Set a new password with a reset token", "public", {
+    body: authBodies.reset,
+    limited: true,
+  }),
+  route("post", "/api/auth/change-password", "Auth", "Change the password while signed in", "user", {
+    body: authBodies.changePassword,
+    limited: true,
+  }),
   route("post", "/api/auth/update-user", "Auth", "Update name or phone", "user", { body: authBodies.updateUser, limited: true }),
 
   // Storefront content
   route("get", v1("/home"), "Storefront", "Homepage data: hero, categories, promotions, product rows", "public"),
   route("get", v1("/settings/public"), "Storefront", "Public store settings (shipping threshold, contacts, searches)", "public"),
   route("get", v1("/promotions/active"), "Storefront", "Live promotions", "public"),
-  route("post", v1("/newsletter"), "Storefront", "Subscribe to the newsletter (200 if already subscribed)", "public", { body: newsletterSchema, limited: true, created: true }),
+  route("post", v1("/newsletter"), "Storefront", "Subscribe to the newsletter (200 if already subscribed)", "public", {
+    body: newsletterSchema,
+    limited: true,
+    created: true,
+  }),
 
   // Catalogue
-  route("get", v1("/products"), "Catalogue", "List products with filters, facet counts and pagination", "public", { query: productListQuerySchema }),
+  route("get", v1("/products"), "Catalogue", "List products with filters, facet counts and pagination", "public", {
+    query: productListQuerySchema,
+  }),
   route("get", v1("/products/by-ids"), "Catalogue", "Product cards by id (recently viewed, wishlist)", "public", { query: idsQuerySchema }),
   route("get", v1("/products/:slug"), "Catalogue", "Product detail with variants and live pricing", "public", { params: slugParamSchema }),
   route("get", v1("/products/:slug/related"), "Catalogue", "Related products", "public", { params: slugParamSchema }),
   route("get", v1("/categories"), "Catalogue", "Category tree", "public"),
   route("get", v1("/categories/:slug"), "Catalogue", "One category", "public", { params: slugParamSchema }),
-  route("get", v1("/search"), "Catalogue", "Search suggestions: top products and matching categories", "public", { query: searchQuerySchema, limited: true }),
+  route("get", v1("/search"), "Catalogue", "Search suggestions: top products and matching categories", "public", {
+    query: searchQuerySchema,
+    limited: true,
+  }),
   route("get", v1("/delivery-estimate"), "Catalogue", "Delivery estimate for a pincode", "public", { query: pincodeQuerySchema }),
-  route("get", v1("/products/:slug/reviews"), "Reviews", "Published reviews, newest first", "public", { params: slugParamSchema, query: reviewsQuerySchema }),
+  route("get", v1("/products/:slug/reviews"), "Reviews", "Published reviews, newest first", "public", {
+    params: slugParamSchema,
+    query: reviewsQuerySchema,
+  }),
   route("get", v1("/products/:slug/reviews/mine"), "Reviews", "Your review of this product, if any", "user", { params: slugParamSchema }),
   route("post", v1("/products/:slug/reviews"), "Reviews", "Write or update your review", "user", {
     params: slugParamSchema,
@@ -124,7 +145,10 @@ export const ROUTES: ApiRoute[] = [
   // Cart (guest cookie or signed-in user)
   route("get", v1("/cart"), "Cart", "The cart with a server-computed summary", "public"),
   route("post", v1("/cart/items"), "Cart", "Add a product option", "public", { body: addCartItemSchema, created: true }),
-  route("patch", v1("/cart/items/:id"), "Cart", "Change a line's quantity", "public", { params: idParamSchema, body: updateCartItemSchema }),
+  route("patch", v1("/cart/items/:id"), "Cart", "Change a line's quantity", "public", {
+    params: idParamSchema,
+    body: updateCartItemSchema,
+  }),
   route("delete", v1("/cart/items/:id"), "Cart", "Remove a line", "public", { params: idParamSchema }),
   route("post", v1("/cart/coupon"), "Cart", "Apply a coupon code", "public", { body: applyCouponSchema }),
   route("delete", v1("/cart/coupon"), "Cart", "Remove the coupon", "public"),
@@ -141,10 +165,15 @@ export const ROUTES: ApiRoute[] = [
   route("delete", v1("/wishlist/:productId"), "Wishlist", "Remove a product", "user", { params: productParamSchema }),
   route("post", v1("/wishlist/sync"), "Wishlist", "Merge a guest wishlist after sign-in", "user", { body: wishlistSyncSchema }),
   route("get", v1("/account/pets"), "Pets", "Your pets, oldest first, with age and life stage", "user"),
-  route("post", v1("/account/pets"), "Pets", "Add a pet (birthday, or an approximate age); up to 5", "user", { body: petInputSchema, created: true }),
+  route("post", v1("/account/pets"), "Pets", "Add a pet (birthday, or an approximate age); up to 5", "user", {
+    body: petInputSchema,
+    created: true,
+  }),
   route("patch", v1("/account/pets/:id"), "Pets", "Edit a pet", "user", { params: idParamSchema, body: petInputSchema }),
   route("delete", v1("/account/pets/:id"), "Pets", "Remove a pet", "user", { params: idParamSchema }),
-  route("get", v1("/account/pets/:id/recommendations"), "Pets", "Up to 8 product picks for this pet, each with a reason", "user", { params: idParamSchema }),
+  route("get", v1("/account/pets/:id/recommendations"), "Pets", "Up to 8 product picks for this pet, each with a reason", "user", {
+    params: idParamSchema,
+  }),
 
   // Checkout and the NestaPay demo gateway
   route("post", v1("/checkout/orders"), "Checkout", "Re-price the cart, reserve stock and create a pending order", "user", {
@@ -156,7 +185,10 @@ export const ROUTES: ApiRoute[] = [
     body: authorizePaymentSchema,
     limited: true,
   }),
-  route("post", v1("/payments/verify"), "Checkout", "Verify the HMAC signature and confirm the order", "user", { body: verifyPaymentSchema, limited: true }),
+  route("post", v1("/payments/verify"), "Checkout", "Verify the HMAC signature and confirm the order", "user", {
+    body: verifyPaymentSchema,
+    limited: true,
+  }),
 
   // Admin
   route("get", v1("/admin/stats/overview"), "Admin: reports", "Dashboard KPIs, revenue by day, top products, low stock", "admin"),
@@ -164,7 +196,10 @@ export const ROUTES: ApiRoute[] = [
   route("get", v1("/admin/reports/orders.csv"), "Admin: reports", "All orders as CSV", "admin", { csv: true }),
   route("get", v1("/admin/settings"), "Admin: store", "Store settings", "admin"),
   route("put", v1("/admin/settings"), "Admin: store", "Update store settings", "admin", { body: settingsInputSchema }),
-  route("post", v1("/admin/uploads"), "Admin: store", "Upload an image (JPEG, PNG, WebP or AVIF, up to 5 MB)", "admin", { upload: true, created: true }),
+  route("post", v1("/admin/uploads"), "Admin: store", "Upload an image (JPEG, PNG, WebP or AVIF, up to 5 MB)", "admin", {
+    upload: true,
+    created: true,
+  }),
   route("get", v1("/admin/products"), "Admin: catalogue", "Products with search and filters", "admin", { query: productQuerySchema }),
   route("get", v1("/admin/products/:id"), "Admin: catalogue", "One product for editing", "admin", { params: idParamSchema }),
   route("post", v1("/admin/products"), "Admin: catalogue", "Create a product", "admin", { body: adminProductInputSchema, created: true }),
@@ -172,10 +207,16 @@ export const ROUTES: ApiRoute[] = [
     params: idParamSchema,
     body: adminProductInputSchema,
   }),
-  route("patch", v1("/admin/products/:id/active"), "Admin: catalogue", "Show or hide a product", "admin", { params: idParamSchema, body: activeSchema }),
+  route("patch", v1("/admin/products/:id/active"), "Admin: catalogue", "Show or hide a product", "admin", {
+    params: idParamSchema,
+    body: activeSchema,
+  }),
   route("get", v1("/admin/categories"), "Admin: catalogue", "Categories with product counts", "admin"),
   route("post", v1("/admin/categories"), "Admin: catalogue", "Create a category", "admin", { body: categoryInputSchema, created: true }),
-  route("put", v1("/admin/categories/:id"), "Admin: catalogue", "Update a category", "admin", { params: idParamSchema, body: categoryInputSchema }),
+  route("put", v1("/admin/categories/:id"), "Admin: catalogue", "Update a category", "admin", {
+    params: idParamSchema,
+    body: categoryInputSchema,
+  }),
   route("delete", v1("/admin/categories/:id"), "Admin: catalogue", "Delete an unused category", "admin", { params: idParamSchema }),
   route("get", v1("/admin/brands"), "Admin: catalogue", "Brands with product counts", "admin"),
   route("post", v1("/admin/brands"), "Admin: catalogue", "Create a brand", "admin", { body: brandInputSchema, created: true }),
@@ -183,22 +224,38 @@ export const ROUTES: ApiRoute[] = [
   route("delete", v1("/admin/brands/:id"), "Admin: catalogue", "Delete an unused brand", "admin", { params: idParamSchema }),
   route("get", v1("/admin/inventory"), "Admin: catalogue", "Stock for every product option", "admin", { query: inventoryQuerySchema }),
   route("patch", v1("/admin/inventory"), "Admin: catalogue", "Set stock for several options at once", "admin", { body: stockUpdateSchema }),
+  route("post", v1("/admin/demo/reset"), "Admin: catalogue", "Reset the live demo: restore stock and renew seeded deals", "admin"),
   route("get", v1("/admin/promotions"), "Admin: marketing", "Promotions with their schedule status", "admin"),
   route("post", v1("/admin/promotions"), "Admin: marketing", "Create a promotion", "admin", { body: promotionInputSchema, created: true }),
-  route("put", v1("/admin/promotions/:id"), "Admin: marketing", "Update a promotion", "admin", { params: idParamSchema, body: promotionInputSchema }),
+  route("put", v1("/admin/promotions/:id"), "Admin: marketing", "Update a promotion", "admin", {
+    params: idParamSchema,
+    body: promotionInputSchema,
+  }),
   route("delete", v1("/admin/promotions/:id"), "Admin: marketing", "Delete a promotion", "admin", { params: idParamSchema }),
   route("get", v1("/admin/coupons"), "Admin: marketing", "Coupons with usage", "admin"),
   route("post", v1("/admin/coupons"), "Admin: marketing", "Create a coupon", "admin", { body: couponInputSchema, created: true }),
-  route("put", v1("/admin/coupons/:id"), "Admin: marketing", "Update a coupon", "admin", { params: idParamSchema, body: couponInputSchema }),
+  route("put", v1("/admin/coupons/:id"), "Admin: marketing", "Update a coupon", "admin", {
+    params: idParamSchema,
+    body: couponInputSchema,
+  }),
   route("delete", v1("/admin/coupons/:id"), "Admin: marketing", "Delete an unused coupon", "admin", { params: idParamSchema }),
   route("get", v1("/admin/orders"), "Admin: sales", "Orders with status filter and search", "admin", { query: orderQuerySchema }),
   route("get", v1("/admin/orders/:id"), "Admin: sales", "Order detail with the next allowed step", "admin", { params: idParamSchema }),
-  route("patch", v1("/admin/orders/:id/status"), "Admin: sales", "Advance or cancel an order", "admin", { params: idParamSchema, body: orderStatusUpdateSchema }),
+  route("patch", v1("/admin/orders/:id/status"), "Admin: sales", "Advance or cancel an order", "admin", {
+    params: idParamSchema,
+    body: orderStatusUpdateSchema,
+  }),
   route("get", v1("/admin/customers"), "Admin: sales", "Customers with paid orders and spend", "admin", { query: customerQuerySchema }),
   route("get", v1("/admin/customers/:id"), "Admin: sales", "Customer detail with orders", "admin", { params: idParamSchema }),
-  route("patch", v1("/admin/customers/:id/role"), "Admin: sales", "Grant or remove admin access", "admin", { params: idParamSchema, body: roleUpdateSchema }),
+  route("patch", v1("/admin/customers/:id/role"), "Admin: sales", "Grant or remove admin access", "admin", {
+    params: idParamSchema,
+    body: roleUpdateSchema,
+  }),
   route("get", v1("/admin/reviews"), "Admin: sales", "Reviews for moderation", "admin", { query: reviewQuerySchema }),
-  route("patch", v1("/admin/reviews/:id/status"), "Admin: sales", "Hide or publish a review", "admin", { params: idParamSchema, body: reviewStatusSchema }),
+  route("patch", v1("/admin/reviews/:id/status"), "Admin: sales", "Hide or publish a review", "admin", {
+    params: idParamSchema,
+    body: reviewStatusSchema,
+  }),
 ];
 
 type JsonSchema = { type?: string; properties?: Record<string, JsonSchema>; required?: string[]; [key: string]: unknown };
@@ -244,7 +301,11 @@ function operation(r: ApiRoute) {
   if (r.upload) {
     op.requestBody = {
       required: true,
-      content: { "multipart/form-data": { schema: { type: "object", required: ["file"], properties: { file: { type: "string", format: "binary" } } } } },
+      content: {
+        "multipart/form-data": {
+          schema: { type: "object", required: ["file"], properties: { file: { type: "string", format: "binary" } } },
+        },
+      },
     };
   }
   if (r.auth !== "public") op.security = [{ session: [] }];

@@ -2,9 +2,29 @@
 
 [![CI](https://github.com/manideep311/nestama/actions/workflows/ci.yml/badge.svg)](https://github.com/manideep311/nestama/actions/workflows/ci.yml)
 
+**Live demo: https://nestama.vercel.app**
+
 A full-stack pet store for dogs and cats: a Next.js storefront, an Express + Prisma API, an admin dashboard, and a demo payment gateway.
 
 > **Portfolio project.** The products are samples and checkout uses NestaPay, a simulated gateway. No real orders are placed and no money moves.
+
+> **First visit may be slow.** The API runs on Render's free plan, which sleeps after 15 minutes without traffic. The first request after that takes about a minute while it wakes up; pages the storefront has already cached load straight away.
+
+| Storefront                                                   | Product page                                                                              | Admin dashboard                                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| ![The storefront home page](docs/screenshots/storefront.jpg) | ![A product page with sizes, price and delivery check](docs/screenshots/product-page.jpg) | ![The admin dashboard with KPIs and a revenue chart](docs/screenshots/admin-dashboard.jpg) |
+
+<sub>Captured at 1440×900 from a local run with the seeded catalogue. The dashboard shows that run's own (small) order history.</sub>
+
+## Try it
+
+- **As a shopper, on the live site.**
+  - Create an account at https://nestama.vercel.app (and add a pet if you like).
+  - Fill the cart and check out with a [NestaPay test value](#demo-values).
+  - Each account can pay for three demo orders a day (see [Live demo protections](#live-demo-protections)).
+- **As an admin, on your machine.** The live site's admin account isn't shared.
+  - Run the store locally ([Running it locally](#running-it-locally)). The seed creates an admin account from the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you choose in `server/.env`.
+  - Sign in at http://localhost:3000/login with those details. Admins land on the dashboard at `/admin`: orders, products, inventory, promotions, reports and settings.
 
 ## Features
 
@@ -55,7 +75,7 @@ The browser only ever talks to the storefront's origin: Next.js rewrites `/api/*
 client/   Next.js storefront and admin dashboard
 server/   Express API, Prisma schema, migrations and seed data
 shared/   Types, Zod schemas and helpers used by both
-docs/     Design specs and build plans
+docs/     Architecture notes (docs/architecture.md) and brand assets
 ```
 
 ## Running it locally
@@ -167,14 +187,16 @@ The API goes first, because the storefront build prerenders catalog pages from i
    - Render asks for the values below. It generates `BETTER_AUTH_SECRET` and `DEMO_GATEWAY_SECRET` itself.
    - Until the storefront exists, set `CLIENT_ORIGIN` and `BETTER_AUTH_URL` to the URL Vercel will give it (e.g. `https://nestama.vercel.app`), and update them if that changes.
 
-   | Variable                           | Value                                                                                          |
-   | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-   | `DATABASE_URL`, `DIRECT_URL`       | The Supabase session pooler string                                                             |
-   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL` | The storefront's URL                                                                           |
-   | `REVALIDATE_SECRET`                | A random value of 32+ characters, the same one used in Vercel                                  |
-   | `TRUST_PROXY`                      | `2` (preset), for Vercel's rewrite plus Render's load balancer                                 |
-   | `CLOUDINARY_URL`                   | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy. |
-   | `RESEND_API_KEY`                   | Optional, for real password-reset emails                                                       |
+   | Variable                                     | Value                                                                                                                                           |
+   | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`, `DIRECT_URL`                 | The Supabase session pooler string                                                                                                              |
+   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL`           | The storefront's URL                                                                                                                            |
+   | `REVALIDATE_SECRET`                          | A random value of 32+ characters, the same one used in Vercel                                                                                   |
+   | `PROXY_SECRET`                               | A random value of 32+ characters, the same one used in Vercel. The API refuses requests without it, so it can't be called around the storefront |
+   | `TRUST_PROXY`                                | `2` (preset), for Vercel's rewrite plus Render's load balancer                                                                                  |
+   | `DEMO_DAILY_ORDER_LIMIT`, `DEMO_RESET_HOURS` | `3` and `24` (preset): see [Live demo protections](#live-demo-protections)                                                                      |
+   | `CLOUDINARY_URL`                             | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy.                                                  |
+   | `RESEND_API_KEY`                             | Optional, for real password-reset emails                                                                                                        |
 
 3. **Storefront: Vercel.**
    - **Add New → Project** → this repository, with **Root Directory** set to `client`. [`client/vercel.json`](client/vercel.json) sets the install and build commands.
@@ -185,6 +207,7 @@ The API goes first, because the storefront build prerenders catalog pages from i
    | `API_URL`              | The Render service URL, e.g. `https://nestama-api.onrender.com`       |
    | `NEXT_PUBLIC_SITE_URL` | The storefront's own URL (used for metadata, the sitemap and JSON-LD) |
    | `REVALIDATE_SECRET`    | The same value as on Render                                           |
+   | `PROXY_SECRET`         | The same value as on Render (server-side only, never `NEXT_PUBLIC_`)  |
 
 **Docker instead of Render.** [`server/Dockerfile`](server/Dockerfile) builds a production image that applies pending migrations, then starts the API as a non-root user with a health check. Give it the same variables as the Render table above, plus `BETTER_AUTH_SECRET` and `DEMO_GATEWAY_SECRET` (32+ random characters each), in a `KEY=value` file without quotes (`docker run --env-file` keeps quotes as part of the value):
 
@@ -192,6 +215,17 @@ The API goes first, because the storefront build prerenders catalog pages from i
 docker build -f server/Dockerfile -t nestama-api .
 docker run --env-file api.env -p 4000:4000 nestama-api
 ```
+
+## Live demo protections
+
+Anyone can check out on the live demo, and every paid order lowers stock for good, so two guards keep it usable:
+
+- **A daily cap per account.** Each account can pay for `DEMO_DAILY_ORDER_LIMIT` orders per day, counted in Indian time (default 3). After that, checkout says so and suggests coming back tomorrow.
+- **A reset.** Every variant has a restock level, which the seed and any admin stock edit set. A reset puts stock back to that level, less what unpaid orders are still holding. It also gives the seeded promotions and coupons a fresh window once they've ended, so the demo's deals don't run out. It runs:
+  - **On a schedule:** the API checks every hour, and resets once `DEMO_RESET_HOURS` have passed since the last one (default 24). On Render's free plan the instance sleeps when idle, so a due reset happens on its next wake-up.
+  - **On demand:** **Admin → Inventory → Reset demo stock**.
+
+Setting either variable to `0` turns that guard off.
 
 ## Security
 
@@ -204,6 +238,7 @@ docker run --env-file api.env -p 4000:4000 nestama-api
   - Uploads are accepted by their bytes (JPG, PNG, WebP or AVIF, 5 MB at most), never by file name or MIME type.
   - CSV exports neutralise spreadsheet formulas.
 - **Cross-site requests:**
+  - In production the API only answers the storefront: its proxy adds a shared secret (`PROXY_SECRET`) to every forwarded request, and direct calls to the API host get a 403. That also keeps the rate limits keyed on the shopper's real IP, which a forged `X-Forwarded-For` can't change.
   - API writes from another origin get a 403.
   - Sign-in redirects only go to paths in the store.
   - Password-reset links only go to the store's own origin.

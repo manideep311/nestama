@@ -38,15 +38,25 @@ const envSchema = z
     REVALIDATE_SECRET: optional,
     /** Where the API reaches the Next.js app server-to-server (defaults to CLIENT_ORIGIN). */
     CLIENT_INTERNAL_URL: optional,
+    /** Shared with the storefront's proxy: requests without it are refused (see lib/proxy-gate.ts). */
+    PROXY_SECRET: optional,
+    /** Live demo: paid orders an account may place per day (Indian time). 0 turns the cap off. */
+    DEMO_DAILY_ORDER_LIMIT: z.coerce.number().int().min(0, "DEMO_DAILY_ORDER_LIMIT must be 0 or more").max(1000).default(3),
+    /** Live demo: restore stock and renew seeded deals this often, in hours. 0 turns it off. */
+    DEMO_RESET_HOURS: z.coerce.number().int().min(0, "DEMO_RESET_HOURS must be 0 or more").max(720).default(24),
     EMAIL_FROM: z.string().default("NESTAMA <hello@nestama.test>"),
   })
   .superRefine((e, ctx) => {
     if (e.NODE_ENV !== "production") return;
-    const require = (key: "DATABASE_URL" | "REVALIDATE_SECRET", why: string) => {
+    const require = (key: "DATABASE_URL" | "REVALIDATE_SECRET" | "PROXY_SECRET", why: string) => {
       if (!e[key]) ctx.addIssue({ code: "custom", path: [key], message: `${key} is required in production (${why})` });
     };
     require("DATABASE_URL", "the store has no data without it");
     require("REVALIDATE_SECRET", "admin changes couldn't refresh the storefront");
+    require("PROXY_SECRET", "direct calls to the API would get past the storefront and its rate limits");
+    if (e.PROXY_SECRET && e.PROXY_SECRET.length < 32) {
+      ctx.addIssue({ code: "custom", path: ["PROXY_SECRET"], message: "PROXY_SECRET must be at least 32 characters" });
+    }
     if (e.REVALIDATE_SECRET && e.REVALIDATE_SECRET.length < 32) {
       ctx.addIssue({ code: "custom", path: ["REVALIDATE_SECRET"], message: "REVALIDATE_SECRET must be at least 32 characters" });
     }
