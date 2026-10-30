@@ -14,7 +14,11 @@ const hasDb = Boolean(process.env.DATABASE_URL);
 const TAG = `s${Date.now().toString(36)}`;
 const QUERY = "stop my dog tugging on walks";
 
-/** Texts about pulling on walks point one way, everything else another (similarity 1 or 0). */
+/**
+ * Texts about pulling on walks point one way (similarity 1 to each other). Other products point a
+ * second way and other queries a third, so a plain query like "harness" is similar to nothing and
+ * keeps its keyword order (no ties for the vector query to break arbitrarily).
+ */
 function topicEmbedder(onEmbed: () => void = () => undefined): Embedder {
   const axis = (i: number) => Array.from({ length: DIMENSIONS }, (_, j) => (j === i ? 1 : 0));
   return {
@@ -22,7 +26,7 @@ function topicEmbedder(onEmbed: () => void = () => undefined): Embedder {
     dimensions: DIMENSIONS,
     async embed(texts) {
       onEmbed();
-      return texts.map((t) => axis(/no-pull harness|tugging/i.test(t) ? 0 : 1));
+      return texts.map((t) => axis(/no-pull harness|tugging/i.test(t) ? 0 : t.includes(". Category: ") ? 1 : 2));
     },
   };
 }
