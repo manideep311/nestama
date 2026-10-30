@@ -240,6 +240,10 @@ model Product {
   soldCount        Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  /// Semantic search: all-MiniLM-L6-v2 embedding of name, description, species and category (pgvector).
+  embedding      Unsupported("vector(384)")?
+  /// Which embedder produced `embedding`; search only compares vectors from the active one.
+  embeddingModel String?
 
   variants      ProductVariant[]
   images        ProductImage[]

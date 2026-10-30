@@ -10,6 +10,10 @@ allowBuilds:
   sharp: true
   "@tailwindcss/oxide": true
   unrs-resolver: true
+  # Search model runtime: onnxruntime-node ships its CPU binaries (its script only fetches optional
+  # CUDA builds), and search works without protobufjs's script.
+  onnxruntime-node: false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - dotenv@18.0.7
   - express@5.3.0

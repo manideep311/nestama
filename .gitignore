@@ -20,6 +20,9 @@ server/src/generated/
 # uploads (local fallback)
 server/uploads/
 
+# semantic search model, downloaded on first use
+server/.cache/
+
 # logs / os
 *.log
 .DS_Store
