@@ -31,6 +31,7 @@ A full-stack pet store for dogs and cats: a Next.js storefront, an Express + Pri
 **Storefront**
 
 - An intro film on the first visit that hands its logo off to the header (skippable, and off for reduced motion).
+- **Search by meaning**: the typeahead blends keyword matches with semantic similarity from a small embedding model running inside the API, so "stop my dog pulling on walks" finds the no-pull harness. See [Semantic search](#semantic-search).
 - Filterable, sortable listings with shareable URLs, typeahead search, quick view, and product pages with galleries, variants, delivery estimates by pincode, and reviews.
 - A cart that works for guests and merges into the account on sign-in, with coupons and stock limits.
 - Checkout with saved addresses and NestaPay (UPI, card or netbanking, with a "simulate a failed payment" switch), then order confirmation and tracking.
@@ -145,17 +146,19 @@ Without `RESEND_API_KEY`, emails such as password resets are printed in the API'
 
 Run from the repository root:
 
-| Command                             | What it does                                                                                                |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                          | API and storefront together, with reload                                                                    |
-| `pnpm test`                         | All test suites (the API's integration tests need the database)                                             |
-| `pnpm typecheck`                    | TypeScript across all packages                                                                              |
-| `pnpm --filter client lint`         | ESLint for the storefront                                                                                   |
-| `pnpm format` / `pnpm format:check` | Prettier                                                                                                    |
-| `pnpm build`                        | Production builds of the API and the storefront (the storefront build reads the catalog from a running API) |
-| `pnpm --filter server db:migrate`   | Create a migration after a schema change                                                                    |
-| `pnpm --filter server db:deploy`    | Apply pending migrations                                                                                    |
-| `pnpm --filter server db:seed`      | Load the sample catalogue (safe to re-run)                                                                  |
+| Command                               | What it does                                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                            | API and storefront together, with reload                                                                    |
+| `pnpm test`                           | All test suites (the API's integration tests need the database)                                             |
+| `pnpm typecheck`                      | TypeScript across all packages                                                                              |
+| `pnpm --filter client lint`           | ESLint for the storefront                                                                                   |
+| `pnpm format` / `pnpm format:check`   | Prettier                                                                                                    |
+| `pnpm build`                          | Production builds of the API and the storefront (the storefront build reads the catalog from a running API) |
+| `pnpm --filter server db:migrate`     | Create a migration after a schema change                                                                    |
+| `pnpm --filter server db:deploy`      | Apply pending migrations                                                                                    |
+| `pnpm --filter server db:seed`        | Load the sample catalogue (safe to re-run)                                                                  |
+| `pnpm --filter server embed:backfill` | Embed products that have no search vector (`--all` re-embeds every product). The API also does this at boot |
+| `pnpm --filter server eval:search`    | Score keyword-only and hybrid search on the evaluation set (`--verbose` lists each query)                   |
 
 ### Testing
 
@@ -167,6 +170,7 @@ Run from the repository root:
   - rate limits;
   - the access level of every documented route;
   - the OpenAPI document staying in sync with the code.
+  - semantic search, with a stand-in embedder so tests never download the model.
 - **CI** runs formatting, typecheck, lint and all tests against a PostgreSQL service, then builds both apps.
 
 ## Deploying
@@ -187,16 +191,17 @@ The API goes first, because the storefront build prerenders catalog pages from i
    - Render asks for the values below. It generates `BETTER_AUTH_SECRET` and `DEMO_GATEWAY_SECRET` itself.
    - Until the storefront exists, set `CLIENT_ORIGIN` and `BETTER_AUTH_URL` to the URL Vercel will give it (e.g. `https://nestama.vercel.app`), and update them if that changes.
 
-   | Variable                                     | Value                                                                                                                                           |
-   | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `DATABASE_URL`, `DIRECT_URL`                 | The Supabase session pooler string                                                                                                              |
-   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL`           | The storefront's URL                                                                                                                            |
-   | `REVALIDATE_SECRET`                          | A random value of 32+ characters, the same one used in Vercel                                                                                   |
-   | `PROXY_SECRET`                               | A random value of 32+ characters, the same one used in Vercel. The API refuses requests without it, so it can't be called around the storefront |
-   | `TRUST_PROXY`                                | `2` (preset), for Vercel's rewrite plus Render's load balancer                                                                                  |
-   | `DEMO_DAILY_ORDER_LIMIT`, `DEMO_RESET_HOURS` | `3` and `24` (preset): see [Live demo protections](#live-demo-protections)                                                                      |
-   | `CLOUDINARY_URL`                             | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy.                                                  |
-   | `RESEND_API_KEY`                             | Optional, for real password-reset emails                                                                                                        |
+   | Variable                                          | Value                                                                                                                                           |
+   | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`, `DIRECT_URL`                      | The Supabase session pooler string                                                                                                              |
+   | `CLIENT_ORIGIN`, `BETTER_AUTH_URL`                | The storefront's URL                                                                                                                            |
+   | `REVALIDATE_SECRET`                               | A random value of 32+ characters, the same one used in Vercel                                                                                   |
+   | `PROXY_SECRET`                                    | A random value of 32+ characters, the same one used in Vercel. The API refuses requests without it, so it can't be called around the storefront |
+   | `TRUST_PROXY`                                     | `2` (preset), for Vercel's rewrite plus Render's load balancer                                                                                  |
+   | `DEMO_DAILY_ORDER_LIMIT`, `DEMO_RESET_HOURS`      | `3` and `24` (preset): see [Live demo protections](#live-demo-protections)                                                                      |
+   | `SEARCH_SEMANTIC_WEIGHT`, `SEARCH_MIN_SIMILARITY` | Optional, default `0.5` and `0.3`: see [Semantic search](#semantic-search). `0` for the weight turns it off                                     |
+   | `CLOUDINARY_URL`                                  | Optional, `cloudinary://<key>:<secret>@<cloud>`. Without it, uploads don't survive a redeploy.                                                  |
+   | `RESEND_API_KEY`                                  | Optional, for real password-reset emails                                                                                                        |
 
 3. **Storefront: Vercel.**
    - **Add New → Project** → this repository, with **Root Directory** set to `client`. [`client/vercel.json`](client/vercel.json) sets the install and build commands.
@@ -227,6 +232,46 @@ Anyone can check out on the live demo, and every paid order lowers stock for goo
 
 Setting either variable to `0` turns that guard off.
 
+## Semantic search
+
+The header's typeahead understands what a shopper means, not just the words they type: "stop my dog pulling on walks" finds the no-pull harness, and "keep my cat from scratching the sofa" finds the scratchers.
+
+- **How:** every product has an embedding of its name, species, category and description from [`all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2), stored with pgvector. The model runs inside the API through Transformers.js, so there's no API key and no per-query cost. Results blend keyword matches with cosine similarity; [docs/architecture.md](docs/architecture.md#search) has the details.
+- **Settings:**
+  - `SEARCH_SEMANTIC_WEIGHT` (default `0.5`): how much similarity counts against the keyword match. `0` is keyword search only, and the model is never loaded.
+  - `SEARCH_MIN_SIMILARITY` (default `0.3`): the similarity a product found only by meaning needs to be shown.
+- **Keeping vectors current:** the API embeds products without a vector at boot, and admin edits re-embed what they change. `pnpm --filter server embed:backfill --all` re-embeds everything.
+
+### Evaluation
+
+`pnpm --filter server eval:search` runs 33 queries from [`server/eval/search-questions.json`](server/eval/search-questions.json) against the seeded catalogue and scores the first correct product in the top 10. Results from a local run:
+
+| Queries         | Keyword only: hit@1 / hit@5 / MRR | Hybrid (`w = 0.5`): hit@1 / hit@5 / MRR |
+| --------------- | --------------------------------- | --------------------------------------- |
+| All 33          | 18.2% / 18.2% / 0.182             | 90.9% / 97.0% / 0.929                   |
+| 6 keyword-style | 100% / 100% / 1.000               | 100% / 100% / 1.000                     |
+| 26 natural      | 0% / 0% / 0.000                   | 88.5% / 96.2% / 0.910                   |
+| 1 typo          | 0% / 0% / 0.000                   | 100% / 100% / 1.000                     |
+
+Weights of 0.2, 0.5 and 0.8 scored the same. On this set, the weight only reorders keyword matches, and none of the misses came down to order.
+
+### Limitations
+
+- **A small, home-made test.** The 33 queries and their answers were written for this project, with the catalogue in view, for 73 products. The scores show the approach works on this catalogue, not how it would do with real shoppers' queries. Each query is about 3 percentage points.
+- **A strict baseline.** The keyword search needs every word to match, so it scores 0 on natural-language queries by design. A ranked keyword search (BM25, say) would do better than that.
+- **Loose matches for things the store doesn't sell.** "bird cage" shows four products, including a cat window hammock, because they clear the similarity threshold. Raising `SEARCH_MIN_SIMILARITY` trades recall for fewer of these.
+- **English only.** The model was trained on English, so Hindi or Hinglish queries match poorly.
+- **Typeahead only.** The `/shop?q=` listing still filters by keywords.
+- **A model download.** The quantised model (about 23 MB) comes from the Hugging Face Hub. Render's build fetches it ahead of time (`model:fetch`); the Docker image downloads it on first start. If it can't be loaded, search falls back to keywords.
+- **Memory.** Measured in the production Docker image (Linux, Node 24) after boot and the 33 evaluation searches:
+
+  | `SEARCH_SEMANTIC_WEIGHT` | API process RSS (peak) | Container memory (peak) | Time per search request |
+  | ------------------------ | ---------------------- | ----------------------- | ----------------------- |
+  | `0` (keywords only)      | 197 MB (211 MB)        | 146 MiB (169 MiB)       | 27.7 ms                 |
+  | `0.5`                    | 324 MB (347 MB)        | 244 MiB (299 MiB)       | 47.0 ms                 |
+
+  So the model adds about 130 MB, and the peak stays under the 512 MB of Render's free plan. These numbers are from a local machine, not from Render. Render's free instances have much less CPU, so expect slower searches there. If memory gets tight, set `SEARCH_SEMANTIC_WEIGHT=0`.
+
 ## Security
 
 - **Sessions:** Better Auth cookies are `httpOnly`, `SameSite=Lax`, and `Secure` in production. Roles are re-read from the database on every admin request, and sign-up and profile updates can't set a role.
@@ -254,5 +299,5 @@ Setting either variable to `0` turns that guard off.
 
 - **A deprecation warning from `pg`.** Prisma's `pg` adapter sometimes runs overlapping queries on one connection, which logs a warning ("Calling client.query() when the client is already executing a query is deprecated"). It's harmless on `pg` 8 and needs a Prisma fix before `pg` 9.
 - **A 500 during database outages.** The session lookup fails first and reports a 500 instead of the API's usual 503 "database unavailable". The storefront shows its retry state either way.
-- **A large Docker image.** Better Auth's optional framework integrations (including Next.js) are installed into it, so it's bigger than it needs to be (about 1.4 GB). It works; a slimmer image needs those peers excluded.
+- **A large Docker image** (about 2 GB). Better Auth's optional framework integrations (including Next.js) are installed into it, and the search model's runtime adds about 450 MB: `onnxruntime-node` ships its macOS and Windows binaries too (about 220 MB), and Transformers.js brings `onnxruntime-web`, which the API doesn't use (140 MB). It works; a slimmer image needs those excluded.
 - **The audit result.** `pnpm audit --prod` reports one low-severity advisory: an `esbuild` dev-server issue, reachable only through Better Auth's optional Vitest integration, which this project doesn't run in production.
