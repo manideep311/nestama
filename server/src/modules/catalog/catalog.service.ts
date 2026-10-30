@@ -9,12 +9,15 @@ import type {
   PromotionDTO,
   SearchResultDTO,
 } from "@nestama/shared";
+import { env } from "../../config/env";
+import { hybridRank } from "../../lib/hybrid-rank";
 import { prisma } from "../../lib/prisma";
 import { notFound } from "../../lib/errors";
 import type { PromotionRule } from "../../lib/pricing";
 import type { Prisma } from "../../generated/prisma/client";
 import { promotionFor, toProductCardDTO, toVariantDTO } from "./product-mapper";
 import { buildFacets, filterItems, sortItems, type ListingItem } from "./listing";
+import { semanticCandidates } from "./semantic";
 
 // ───────────── Shared query shapes ─────────────
 
@@ -145,18 +148,53 @@ export async function listProducts(query: ProductListQuery, now = new Date()): P
   };
 }
 
-/** Header search: best matches first (name prefix > name contains > anything else). */
-export async function searchCatalog(q: string, now = new Date()): Promise<SearchResultDTO> {
-  const items = filterItems(await listingItems(now), { q, sort: "featured", page: 1, pageSize: 6 });
+/** Keyword matches, best first (name prefix > name contains > anything else, then best sellers). */
+function keywordMatches(items: ListingItem[], q: string): ListingItem[] {
   const needle = q.toLowerCase();
   const rank = (i: ListingItem) => {
     const name = i.card.name.toLowerCase();
     return name.startsWith(needle) ? 0 : name.includes(needle) ? 1 : 2;
   };
-  const products = [...items]
-    .sort((a, b) => rank(a) - rank(b) || b.meta.soldCount - a.meta.soldCount)
-    .slice(0, 6)
-    .map((i) => i.card);
+  return filterItems(items, { q, sort: "featured", page: 1, pageSize: 6 }).sort(
+    (a, b) => rank(a) - rank(b) || b.meta.soldCount - a.meta.soldCount,
+  );
+}
+
+let warnedSemantic = false;
+
+/**
+ * The header search's ranking: keyword matches blended with semantic similarity (see
+ * `hybridRank`). If the vector query fails (say the model couldn't be downloaded), it falls back
+ * to keyword order. Exported for the search evaluation (`pnpm --filter server eval:search`).
+ */
+export async function rankSearch(
+  q: string,
+  options: { weight?: number; minSimilarity?: number; limit?: number } = {},
+  now = new Date(),
+): Promise<ListingItem[]> {
+  const { weight = env.SEARCH_SEMANTIC_WEIGHT, minSimilarity = env.SEARCH_MIN_SIMILARITY, limit = 6 } = options;
+  const items = await listingItems(now);
+  const keyword = keywordMatches(items, q);
+  if (weight <= 0) return keyword.slice(0, limit);
+
+  const byId = new Map(items.map((i) => [i.card.id, i]));
+  const semantic = await semanticCandidates(q).catch((err: unknown) => {
+    if (!warnedSemantic)
+      console.warn("[search] Semantic search unavailable, using keywords only:", err instanceof Error ? err.message : err);
+    warnedSemantic = true;
+    return [];
+  });
+  return hybridRank(
+    keyword.map((i) => i.card.id),
+    semantic.filter((s) => byId.has(s.id)), // only products the storefront lists
+    { weight, minSimilarity, limit },
+  ).map((id) => byId.get(id)!);
+}
+
+/** Header search: products (see `rankSearch`) plus categories whose name matches. */
+export async function searchCatalog(q: string, now = new Date()): Promise<SearchResultDTO> {
+  const products = (await rankSearch(q, {}, now)).map((i) => i.card);
+  const needle = q.toLowerCase();
 
   const categories = (await prisma.category.findMany({ orderBy: { sortOrder: "asc" }, select: { slug: true, name: true } }))
     .filter(

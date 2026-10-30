@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../lib/errors";
 import { slugify } from "../../lib/slug";
 import { revalidateStorefront } from "../../lib/revalidate";
+import { refreshProductEmbeddings } from "../catalog/semantic";
 
 /** "1 product", "3 products"; empty for zero so callers can drop it. */
 const plural = (n: number, one: string, many = `${one}s`) => (n === 0 ? "" : `${n} ${n === 1 ? one : many}`);
@@ -87,6 +88,12 @@ export async function updateCategory(id: string, data: CategoryData): Promise<Ad
   await assertParent(data.parentId, id);
   const slug = await uniqueSlug("category", data.slug, data.name, id);
   await prisma.category.update({ where: { id }, data: { ...data, slug } });
+  // Category names are part of each product's embedded text.
+  const products = await prisma.product.findMany({
+    where: { OR: [{ categoryId: id }, { category: { parentId: id } }] },
+    select: { id: true },
+  });
+  await refreshProductEmbeddings(products.map((p) => p.id));
   revalidateStorefront();
   return listAdminCategories();
 }

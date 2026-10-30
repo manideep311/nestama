@@ -38,6 +38,12 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, DEMO_DAILY_ORDER_LIMIT: "-1" })).toThrow(/DEMO_DAILY_ORDER_LIMIT/);
   });
 
+  it("blends semantic search in by default, and 0 keeps search keyword-only", () => {
+    expect(parseEnv(base)).toMatchObject({ SEARCH_SEMANTIC_WEIGHT: 0.5, SEARCH_MIN_SIMILARITY: 0.3 });
+    expect(parseEnv({ ...base, SEARCH_SEMANTIC_WEIGHT: "0" }).SEARCH_SEMANTIC_WEIGHT).toBe(0);
+    expect(() => parseEnv({ ...base, SEARCH_SEMANTIC_WEIGHT: "1.5" })).toThrow(/SEARCH_SEMANTIC_WEIGHT/);
+  });
+
   it("accepts a complete production environment", () => {
     expect(parseEnv(production).NODE_ENV).toBe("production");
   });

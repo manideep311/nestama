@@ -3,6 +3,8 @@ import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
 import { expireStaleOrders } from "./modules/orders/order-expiry";
 import { maybeResetDemoStore } from "./modules/demo/demo.service";
+import { backfillEmbeddings } from "./modules/catalog/semantic";
+import { getEmbedder } from "./lib/embeddings";
 
 const app = createApp();
 
@@ -42,6 +44,20 @@ async function resetDemoIfDue() {
 void resetDemoIfDue();
 const demoReset = setInterval(resetDemoIfDue, 60 * 60_000);
 demoReset.unref();
+
+// Semantic search: embed products that have no vector yet (new deploys, a model change), and load
+// the model now so the first search doesn't wait for it. Off when the weight is 0.
+async function backfillSearchEmbeddings() {
+  if (!env.DATABASE_URL || env.SEARCH_SEMANTIC_WEIGHT <= 0) return;
+  try {
+    const embedded = await backfillEmbeddings();
+    if (embedded > 0) console.info(`[search] Embedded ${embedded} product(s) for semantic search.`);
+    await getEmbedder().embed(["warm-up"]);
+  } catch (err) {
+    console.error("[search] Embedding backfill failed (search falls back to keywords):", err instanceof Error ? err.message : err);
+  }
+}
+void backfillSearchEmbeddings();
 
 // Hosts send SIGTERM before replacing an instance: finish in-flight requests, then close the pool.
 function shutdown(signal: NodeJS.Signals) {
