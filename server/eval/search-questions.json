@@ -1,5 +1,5 @@
 {
-  "about": "Search evaluation set for `pnpm --filter server eval:search`. Written by hand against the seeded catalogue (prisma/seed-data/products.ts); `expected` lists every product that would be a correct answer, and a query is a hit when any of them appears.",
+  "about": "Search evaluation set for `pnpm --filter server eval:search`. Written for this project against the seeded catalogue (prisma/seed-data/products.ts); `expected` lists every product that would be a correct answer, and a query is a hit when any of them appears. Off-catalogue queries have no correct answer: the store sells nothing that fits, so every product shown for them is irrelevant.",
   "queries": [
     {
       "q": "no-pull harness",
@@ -244,6 +244,56 @@
       "expected": [
         "fetch-pro-tennis-balls"
       ]
+    },
+    {
+      "q": "bird cage",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "aquarium filter",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "hamster wheel",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "horse saddle",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "rabbit hutch",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "laptop charger",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "car tyres",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "pizza delivery",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "garden hose",
+      "kind": "off-catalogue",
+      "expected": []
+    },
+    {
+      "q": "men's running shoes",
+      "kind": "off-catalogue",
+      "expected": []
     }
   ]
 }

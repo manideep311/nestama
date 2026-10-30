@@ -27,3 +27,22 @@ export function searchMetrics(results: RankedQuery[]): SearchMetrics {
     mrr: ranks.reduce((sum, r) => sum + (r ? 1 / r : 0), 0) / ranks.length,
   };
 }
+
+export interface OffCatalogueMetrics {
+  queries: number;
+  /** Share of queries that showed any product (every one of them is irrelevant). */
+  withResults: number;
+  /** Products shown per query, counting only what the typeahead displays. */
+  avgShown: number;
+}
+
+/** For queries the store has no answer to: how often products are shown anyway, and how many. */
+export function offCatalogueMetrics(results: string[][], shown = 6): OffCatalogueMetrics {
+  if (results.length === 0) return { queries: 0, withResults: 0, avgShown: 0 };
+  const counts = results.map((r) => Math.min(r.length, shown));
+  return {
+    queries: results.length,
+    withResults: counts.filter((n) => n > 0).length / counts.length,
+    avgShown: counts.reduce((a, b) => a + b, 0) / counts.length,
+  };
+}

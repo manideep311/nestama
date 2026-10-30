@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchMetrics } from "./search-metrics";
+import { offCatalogueMetrics, searchMetrics } from "./search-metrics";
 
 describe("searchMetrics", () => {
   it("scores the first expected product's rank in each result list", () => {
@@ -14,5 +14,17 @@ describe("searchMetrics", () => {
 
   it("is all zeros for no queries", () => {
     expect(searchMetrics([])).toEqual({ queries: 0, hitAt1: 0, hitAt5: 0, mrr: 0 });
+  });
+});
+
+describe("offCatalogueMetrics", () => {
+  it("counts what a shopper would see for queries the store has no answer to", () => {
+    // The typeahead shows 6, so the third query counts as 6.
+    expect(offCatalogueMetrics([[], ["a", "b"], ["a", "b", "c", "d", "e", "f", "g"], []])).toEqual({
+      queries: 4,
+      withResults: 0.5,
+      avgShown: (0 + 2 + 6 + 0) / 4,
+    });
+    expect(offCatalogueMetrics([])).toEqual({ queries: 0, withResults: 0, avgShown: 0 });
   });
 });
