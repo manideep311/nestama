@@ -35,8 +35,13 @@ export function localMiniLm(cacheDir = path.resolve(process.cwd(), ".cache", "mo
         extractor = null; // let a later call retry (e.g. after a network blip during the download)
         throw err;
       });
-      const output = await (await extractor)(texts, { pooling: "mean", normalize: true });
-      return output.tolist();
+      // One text per run: the q8 model quantises activations with scales taken from the whole
+      // batch, so a batched text's vector depends on its neighbours (cosine ≈ 0.99 to itself
+      // alone, enough to reorder close results). Alone, a product embeds like a query does.
+      const run = await extractor;
+      const vectors: number[][] = [];
+      for (const text of texts) vectors.push((await run([text], { pooling: "mean", normalize: true })).tolist()[0]!);
+      return vectors;
     },
   };
 }
