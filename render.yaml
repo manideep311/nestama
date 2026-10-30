@@ -7,7 +7,9 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter server build
+    # The last step downloads the semantic search model into the build, so instances don't fetch it
+    # each time they wake up (it's skipped, with a warning, if the download fails).
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter server build && pnpm --filter server model:fetch
     # Pending migrations run before each start (paid plans can move this to preDeployCommand).
     # Plain node binaries here, so the runtime doesn't depend on the build's pnpm shims.
     startCommand: cd server && node_modules/.bin/prisma migrate deploy && node dist/server.js

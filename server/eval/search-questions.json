@@ -1,0 +1,249 @@
+{
+  "about": "Search evaluation set for `pnpm --filter server eval:search`. Written by hand against the seeded catalogue (prisma/seed-data/products.ts); `expected` lists every product that would be a correct answer, and a query is a hit when any of them appears.",
+  "queries": [
+    {
+      "q": "no-pull harness",
+      "kind": "keyword",
+      "expected": [
+        "adventure-no-pull-harness"
+      ]
+    },
+    {
+      "q": "tennis balls",
+      "kind": "keyword",
+      "expected": [
+        "fetch-pro-tennis-balls"
+      ]
+    },
+    {
+      "q": "cat tree",
+      "kind": "keyword",
+      "expected": [
+        "sky-tower-cat-tree"
+      ]
+    },
+    {
+      "q": "hairball",
+      "kind": "keyword",
+      "expected": [
+        "hairball-control-gel"
+      ]
+    },
+    {
+      "q": "raincoat",
+      "kind": "keyword",
+      "expected": [
+        "rainy-day-dog-raincoat"
+      ]
+    },
+    {
+      "q": "tuna",
+      "kind": "keyword",
+      "expected": [
+        "tender-tuna-pate"
+      ]
+    },
+    {
+      "q": "stop my dog pulling on walks",
+      "kind": "natural",
+      "expected": [
+        "adventure-no-pull-harness"
+      ]
+    },
+    {
+      "q": "something to calm an anxious cat",
+      "kind": "natural",
+      "expected": [
+        "calm-and-cozy-cat-treats",
+        "sunbeam-calming-donut-bed"
+      ]
+    },
+    {
+      "q": "bed for an old dog with stiff joints",
+      "kind": "natural",
+      "expected": [
+        "orthopedic-memory-foam-bed"
+      ]
+    },
+    {
+      "q": "supplement for my senior dog's hips",
+      "kind": "natural",
+      "expected": [
+        "joint-care-glucosamine-chews"
+      ]
+    },
+    {
+      "q": "keep my cat from scratching the sofa",
+      "kind": "natural",
+      "expected": [
+        "saguaro-cactus-scratcher",
+        "sisal-post-with-dangling-toy",
+        "cloud-perch-scratching-lounge",
+        "sky-tower-cat-tree"
+      ]
+    },
+    {
+      "q": "shampoo for itchy skin",
+      "kind": "natural",
+      "expected": [
+        "oatmeal-aloe-gentle-shampoo"
+      ]
+    },
+    {
+      "q": "my dog eats too fast",
+      "kind": "natural",
+      "expected": [
+        "stainless-slow-feeder",
+        "treat-puzzle-ball"
+      ]
+    },
+    {
+      "q": "clean my dog's teeth",
+      "kind": "natural",
+      "expected": [
+        "dental-care-kit",
+        "orange-crush-chew-bone",
+        "tug-and-toss-cotton-rope-toy"
+      ]
+    },
+    {
+      "q": "food for a growing puppy",
+      "kind": "natural",
+      "expected": [
+        "grain-free-salmon-puppy-kibble"
+      ]
+    },
+    {
+      "q": "warm clothes for winter for a small dog",
+      "kind": "natural",
+      "expected": [
+        "cloud-knit-hoodie",
+        "puffer-winter-jacket",
+        "cable-knit-dog-sweater"
+      ]
+    },
+    {
+      "q": "toy my cat can play with alone",
+      "kind": "natural",
+      "expected": [
+        "spin-and-chase-track"
+      ]
+    },
+    {
+      "q": "carry my cat on a flight",
+      "kind": "natural",
+      "expected": [
+        "clear-view-rolling-carrier",
+        "explorer-pet-carrier-backpack"
+      ]
+    },
+    {
+      "q": "protect the car seat from dog hair",
+      "kind": "natural",
+      "expected": [
+        "road-trip-car-seat-cover"
+      ]
+    },
+    {
+      "q": "reduce shedding",
+      "kind": "natural",
+      "expected": [
+        "deshedding-grooming-glove",
+        "self-cleaning-slicker-brush"
+      ]
+    },
+    {
+      "q": "treats for training my dog",
+      "kind": "natural",
+      "expected": [
+        "protein-puffs-training-treats"
+      ]
+    },
+    {
+      "q": "a soft toy for a puppy to sleep with",
+      "kind": "natural",
+      "expected": [
+        "cuddle-lamb-comfort-toy"
+      ]
+    },
+    {
+      "q": "brush for long-haired cat tangles",
+      "kind": "natural",
+      "expected": [
+        "cat-detangling-comb"
+      ]
+    },
+    {
+      "q": "water bowl for hiking",
+      "kind": "natural",
+      "expected": [
+        "collapsible-travel-bowl"
+      ]
+    },
+    {
+      "q": "jog with my dog",
+      "kind": "natural",
+      "expected": [
+        "hands-free-running-leash"
+      ]
+    },
+    {
+      "q": "chew toy for aggressive chewers",
+      "kind": "natural",
+      "expected": [
+        "bounce-back-rubber-bone",
+        "orange-crush-chew-bone"
+      ]
+    },
+    {
+      "q": "upset stomach dog",
+      "kind": "natural",
+      "expected": [
+        "probiotic-gut-health-chews"
+      ]
+    },
+    {
+      "q": "cat food with fish",
+      "kind": "natural",
+      "expected": [
+        "ocean-fish-cat-kibble",
+        "tender-tuna-pate"
+      ]
+    },
+    {
+      "q": "let my cat watch birds from the window",
+      "kind": "natural",
+      "expected": [
+        "window-hammock-lounger"
+      ]
+    },
+    {
+      "q": "tag with my phone number in case my pet gets lost",
+      "kind": "natural",
+      "expected": [
+        "engraved-pet-id-tag"
+      ]
+    },
+    {
+      "q": "take my cat for a walk outside",
+      "kind": "natural",
+      "expected": [
+        "cat-walking-harness-set"
+      ]
+    },
+    {
+      "q": "my small dog wants to see out of the car window",
+      "kind": "natural",
+      "expected": [
+        "calm-ride-car-booster-bed"
+      ]
+    },
+    {
+      "q": "tenis ball",
+      "kind": "typo",
+      "expected": [
+        "fetch-pro-tennis-balls"
+      ]
+    }
+  ]
+}
