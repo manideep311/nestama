@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     environment: "node",
+    // Swaps the local embedding model for a deterministic stand-in, so tests never download it.
+    setupFiles: ["test/setup-embedder.ts"],
     testTimeout: 20000,
     hookTimeout: 30000,
     // Integration tests share one database and assert on exact stock counts, so test files run

@@ -44,6 +44,10 @@ const envSchema = z
     DEMO_DAILY_ORDER_LIMIT: z.coerce.number().int().min(0, "DEMO_DAILY_ORDER_LIMIT must be 0 or more").max(1000).default(3),
     /** Live demo: restore stock and renew seeded deals this often, in hours. 0 turns it off. */
     DEMO_RESET_HOURS: z.coerce.number().int().min(0, "DEMO_RESET_HOURS must be 0 or more").max(720).default(24),
+    /** Search: how much cosine similarity counts against the keyword match (0 = keyword only, no model). */
+    SEARCH_SEMANTIC_WEIGHT: z.coerce.number().min(0).max(1, "SEARCH_SEMANTIC_WEIGHT must be between 0 and 1").default(0.5),
+    /** Search: the similarity a product needs to be shown when no keyword matched it. */
+    SEARCH_MIN_SIMILARITY: z.coerce.number().min(0).max(1, "SEARCH_MIN_SIMILARITY must be between 0 and 1").default(0.3),
     EMAIL_FROM: z.string().default("NESTAMA <hello@nestama.test>"),
   })
   .superRefine((e, ctx) => {

@@ -32,8 +32,9 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 COPY --from=build --chown=node:node /repo/server/dist ./dist
-# Local uploads land here when Cloudinary isn't configured (use CLOUDINARY_URL in production).
-RUN mkdir -p uploads && chown node:node uploads
+# Local uploads land here when Cloudinary isn't configured (use CLOUDINARY_URL in production), and
+# the semantic search model is downloaded into .cache on first start.
+RUN mkdir -p uploads .cache && chown node:node uploads .cache
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

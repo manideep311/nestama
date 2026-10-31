@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../lib/errors";
 import { slugify } from "../../lib/slug";
 import { revalidateStorefront } from "../../lib/revalidate";
+import { refreshProductEmbeddings } from "../catalog/semantic";
 import type { Prisma } from "../../generated/prisma/client";
 
 const PAGE_SIZE = 20;
@@ -198,6 +199,7 @@ export async function createAdminProduct(data: AdminProductData): Promise<AdminP
     },
     select: { id: true },
   });
+  await refreshProductEmbeddings([created.id]);
   revalidateStorefront();
   return getAdminProduct(created.id);
 }
@@ -243,6 +245,7 @@ export async function updateAdminProduct(id: string, data: AdminProductData): Pr
     }
   });
 
+  await refreshProductEmbeddings([id]);
   revalidateStorefront();
   return getAdminProduct(id);
 }

@@ -13,9 +13,13 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "embed:backfill": "tsx scripts/embed-backfill.ts",
+    "model:fetch": "tsx scripts/fetch-model.ts",
+    "eval:search": "tsx eval/search-eval.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.2",
     "@nestama/shared": "workspace:*",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",

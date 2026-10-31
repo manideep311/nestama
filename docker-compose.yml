@@ -5,7 +5,10 @@
 # The credentials only work on this machine (the port is bound to 127.0.0.1).
 services:
   db:
-    image: postgres:17-alpine
+    # PostgreSQL 17 with pgvector, for semantic search. Switching an existing volume over from the
+    # old postgres:17-alpine image? Run `REINDEX DATABASE nestama;` once (alpine and Debian sort
+    # text differently).
+    image: pgvector/pgvector:pg17
     restart: unless-stopped
     environment:
       POSTGRES_USER: nestama
