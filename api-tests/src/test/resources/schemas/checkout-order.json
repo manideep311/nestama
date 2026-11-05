@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Order created at checkout",
+  "type": "object",
+  "required": ["orderId", "orderNumber", "gatewayOrderId", "amount"],
+  "additionalProperties": false,
+  "properties": {
+    "orderId": { "type": "string", "minLength": 1 },
+    "orderNumber": { "type": "string", "pattern": "^NST-[A-Z0-9]+$" },
+    "gatewayOrderId": { "type": "string", "pattern": "^order_" },
+    "amount": { "type": "integer", "minimum": 1 }
+  }
+}

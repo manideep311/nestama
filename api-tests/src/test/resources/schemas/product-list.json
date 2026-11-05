@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Paginated product list",
+  "type": "object",
+  "required": ["items", "total", "page", "pageSize", "totalPages", "facets"],
+  "properties": {
+    "total": { "type": "integer", "minimum": 0 },
+    "page": { "type": "integer", "minimum": 1 },
+    "pageSize": { "type": "integer", "minimum": 1, "maximum": 48 },
+    "totalPages": { "type": "integer", "minimum": 0 },
+    "facets": { "type": "object" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "slug", "name", "petType", "pricing", "defaultVariantId", "stock"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string", "minLength": 1 },
+          "petType": { "enum": ["DOG", "CAT", "BOTH"] },
+          "defaultVariantId": { "type": "string", "minLength": 1 },
+          "stock": { "type": "string" },
+          "pricing": {
+            "type": "object",
+            "required": ["price", "salePrice"],
+            "properties": {
+              "price": { "type": "integer", "minimum": 0 },
+              "salePrice": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
