@@ -171,7 +171,8 @@ Run from the repository root:
   - the access level of every documented route;
   - the OpenAPI document staying in sync with the code.
   - semantic search, with a stand-in embedder so tests never download the model.
-- **CI** runs formatting, typecheck, lint and all tests against a PostgreSQL service, then builds both apps.
+- **API tests** (`api-tests/`, Java with REST Assured and JUnit 5) call the running API over HTTP like any client would: 65 tests covering auth, catalog, cart maths, coupons, the full checkout and payment-signature flow, access control and JSON-schema contracts. See [api-tests/README.md](api-tests/README.md).
+- **CI** runs formatting, typecheck, lint and all tests against a PostgreSQL service, then builds both apps. A second workflow starts the built API and runs the REST Assured suite against it.
 
 ## Deploying
 

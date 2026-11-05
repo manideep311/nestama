@@ -1,0 +1,94 @@
+name: API tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rest-assured:
+    name: REST Assured (Java)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        # PostgreSQL 17 with pgvector, same as the main CI job.
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: nestama
+          POSTGRES_PASSWORD: nestama
+          POSTGRES_DB: nestama
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nestama -d nestama"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Throwaway values for this CI run only. PROXY_SECRET is set so the proxy-gate tests run too.
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://nestama:nestama@localhost:5432/nestama
+      DIRECT_URL: postgresql://nestama:nestama@localhost:5432/nestama
+      BETTER_AUTH_SECRET: ci-only-better-auth-secret-not-for-production
+      DEMO_GATEWAY_SECRET: ci-only-demo-gateway-secret-not-for-production
+      PROXY_SECRET: ci-only-proxy-secret-not-for-production-use
+      SEARCH_SEMANTIC_WEIGHT: "0"
+      DEMO_RESET_HOURS: "0"
+      NESTAMA_API_URL: http://localhost:4000
+      NESTAMA_PROXY_SECRET: ci-only-proxy-secret-not-for-production-use
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate and seed the database
+        run: |
+          pnpm --filter server db:deploy
+          pnpm --filter server db:seed
+
+      - name: Build and start the API
+        run: |
+          pnpm --filter server build
+          node server/dist/server.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4000/api/v1/health && break; sleep 1; done
+          curl -sf http://localhost:4000/api/v1/health
+
+      - name: Run the API tests
+        working-directory: api-tests
+        run: mvn -B -ntp test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-reports
+          path: api-tests/target/surefire-reports/
+
+      - name: API log
+        if: failure()
+        run: cat api.log || true
